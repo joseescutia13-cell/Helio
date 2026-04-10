@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#050D1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Healio">
+<link rel="manifest" href="manifest.json">
+<title>Healio — Your AI Health Companion</title>
+<style>
+/* System fonts - no external dependency, loads instantly on any device */
+</style>
+<script>
+// healio-kb.js — Healio Offline Medical Knowledge Base
+// Built-in medical knowledge. No internet required.
+// Sources: WHO, CDC, Mayo Clinic, American Red Cross first aid guidelines.
+// DISCLAIMER: For informational use only. Always seek professional medical care.
+
+const HEALIO_KB = {
+
+  // ─── EMERGENCY TRIGGERS ───────────────────────────────────────────────────
+  // These keywords always escalate to 911 regardless of anything else
+  emergencyKeywords: [
+    'chest pain','chest tightness','heart attack','cardiac arrest',
+    'cant breathe','can\'t breathe','difficulty breathing','not breathing',
+    'stroke','face drooping','arm weakness','speech difficulty',
+    'unconscious','unresponsive','passed out','collapsed',
+    'severe bleeding','won\'t stop bleeding','spurting blood',
+    'anaphylaxis','severe allergic reaction','throat closing','throat swelling',
+    'overdose','took too many pills','poisoning','swallowed poison',
+    'seizure','convulsions','fitting',
+    'suicide','kill myself','end my life',
+    'drowning','choking','severe burn','fire','electrocution',
+    'head injury','skull fracture','spinal injury','broken neck',
+    'diabetic coma','blood sugar very low','hypoglycemic',
+    'meningitis','stiff neck with fever and rash',
+    'appendicitis','severe abdominal pain radiating',
+    'ectopic pregnancy','severe pelvic pain pregnancy'
+  ],
+
+  // ─── CONDITIONS DATABASE ──────────────────────────────────────────────────
+  conditions: {
+
+    // ── RESPIRATORY ──
+    common_cold: {
+      name: 'Common Cold',
+      emoji: '🤧',
+      category: 'respiratory',
+      symptoms: ['runny nose','stuffy nose','sore throat','sneezing','mild cough','mild fever','congestion','watery eyes','fatigue'],
+      causes: 'Viral infection (rhinovirus most common). Spread by droplets or touching contaminated surfaces.',
+      severity: 'mild',
+      duration: '7–10 days',
+      advice: [
+        'Rest as much as possible — your body heals faster when you sleep',
+        'Drink plenty of fluids: water, herbal tea, warm broth',
+        'Use saline nasal spray to relieve congestion',
+        'Gargle warm salt water for sore throat (1/4 tsp salt in 8oz water)',
+        'Over-the-counter: acetaminophen or ibuprofen for fever/discomfort',
+        'Honey (1 tsp) can soothe a cough — do NOT give honey to children under 1',
+        'Humidifier in your room helps with congestion'
+      ],
+      seeDoctor: ['fever above 103°F (39.4°C)','symptoms lasting more than 10 days','severe headache or sinus pain','difficulty breathing','symptoms suddenly get worse after improving'],
+      prevention: ['Wash hands frequently for 20+ seconds','Avoid touching your face','Stay away from sick people','Disinfect high-touch surfaces']
+    },
+
+    flu: {
+      name: 'Influenza (Flu)',
+      emoji: '🤒',
+      category: 'respiratory',
+      symptoms: ['sudden high fever','chills','severe body aches','headache','extreme fatigue','dry cough','sore throat','runny nose','sometimes vomiting and diarrhea'],
+      causes: 'Influenza A or B virus. Spreads by respiratory droplets. Much more severe than a cold — comes on suddenly.',
+      severity: 'moderate',
+      duration: '5–7 days for main symptoms, fatigue can last 2 weeks',
+      advice: [
+        'Rest completely — flu is much harder on the body than a cold',
+        'Stay hydrated: aim for 8–10 glasses of fluids a day',
+        'Acetaminophen or ibuprofen to control fever and body aches',
+        'Antiviral medications (Tamiflu) work best if taken within 48 hours of symptoms — see a doctor quickly if high-risk',
+        'Isolate yourself to avoid spreading it — contagious 1 day before and up to 7 days after symptoms start',
+        'Warm broths and soups help with hydration and comfort'
+      ],
+      seeDoctor: ['difficulty breathing','persistent chest pain','confusion or altered consciousness','severe vomiting preventing hydration','fever above 104°F','symptoms improve then return with fever and worse cough','high-risk groups: elderly, pregnant, young children, immunocompromised'],
+      prevention: ['Annual flu vaccine — most effective prevention','Hand washing','Avoid close contact with sick people']
+    },
+
+    asthma_attack: {
+      name: 'Asthma Attack',
+      emoji: '😮‍💨',
+      category: 'respiratory',
+      symptoms: ['wheezing','shortness of breath','chest tightness','coughing especially at night','difficulty speaking full sentences'],
+      causes: 'Airways narrow and swell. Triggered by allergens, exercise, cold air, smoke, stress, respiratory infections.',
+      severity: 'moderate-severe',
+      duration: 'Minutes to hours',
+      advice: [
+        'Sit upright — do NOT lie down, this makes breathing harder',
+        'Use your rescue inhaler (blue inhaler) immediately — 2 puffs, wait 1 minute, 2 more if needed',
+        'Stay calm — anxiety makes it worse',
+        'Move away from any trigger (smoke, pets, cold air)',
+        'If no inhaler: try pursed-lip breathing — inhale through nose 2 counts, exhale through pursed lips 4 counts',
+        'If no improvement in 15 minutes — call 911'
+      ],
+      seeDoctor: ['no improvement after rescue inhaler','lips or fingernails turning blue','struggling to walk or talk','nostrils flaring','neck muscles visibly straining to breathe — CALL 911'],
+      emergency: true
+    },
+
+    // ── PAIN ──
+    headache_tension: {
+      name: 'Tension Headache',
+      emoji: '🤕',
+      category: 'pain',
+      symptoms: ['dull aching head pain','pressure or tightness around forehead','tenderness in scalp neck shoulders','mild to moderate intensity','both sides of head'],
+      causes: 'Muscle tension in neck and scalp. Triggered by stress, poor posture, eye strain, dehydration, skipped meals, poor sleep.',
+      severity: 'mild',
+      duration: '30 minutes to several hours',
+      advice: [
+        'Take acetaminophen (Tylenol) or ibuprofen (Advil) — follow package dosage',
+        'Apply a cold or warm compress to your forehead or neck',
+        'Drink a full glass of water — dehydration is the #1 cause',
+        'Rest in a quiet, dark room',
+        'Gently massage your temples, scalp, and neck in circular motions',
+        'Try deep breathing: inhale 4 counts, hold 4, exhale 6',
+        'Check your posture — if at a screen, take a break and stretch your neck'
+      ],
+      seeDoctor: ['worst headache of your life','headache with stiff neck and fever','headache after head injury','sudden severe headache','headache with vision changes, confusion, weakness, or numbness'],
+      prevention: ['Stay hydrated','Regular sleep schedule','Manage stress','Take regular screen breaks','Maintain good posture']
+    },
+
+    migraine: {
+      name: 'Migraine',
+      emoji: '😫',
+      category: 'pain',
+      symptoms: ['throbbing or pulsing pain usually one side','moderate to severe intensity','nausea','vomiting','sensitivity to light','sensitivity to sound','visual aura (zigzag lines, blind spots) in some people','lasts 4–72 hours'],
+      causes: 'Complex neurological condition. Triggers: hormonal changes, certain foods (aged cheese, wine, caffeine), stress, bright lights, strong smells, sleep changes.',
+      severity: 'moderate-severe',
+      duration: '4–72 hours',
+      advice: [
+        'Retreat to a dark, quiet room immediately — light and sound make it worse',
+        'Apply a cold pack to your forehead or neck',
+        'Try to sleep if possible',
+        'Over-the-counter: ibuprofen, aspirin, or Excedrin Migraine (contains caffeine which helps some people)',
+        'If prescribed: take your triptan medication (sumatriptan etc.) at FIRST sign — early treatment works much better',
+        'Avoid screens, bright lights, and loud environments',
+        'Stay hydrated — sip water slowly if nauseous',
+        'Ginger tea or ginger chews can help with nausea'
+      ],
+      seeDoctor: ['migraines getting more frequent','aura lasting more than 1 hour','weakness or numbness during migraine','sudden worst headache of your life','headache with fever and stiff neck'],
+      prevention: ['Keep a migraine diary to identify triggers','Regular sleep schedule','Stay hydrated','Manage stress','Limit caffeine']
+    },
+
+    back_pain: {
+      name: 'Lower Back Pain',
+      emoji: '🔙',
+      category: 'pain',
+      symptoms: ['dull aching lower back','muscle spasms','stiffness','pain that worsens with bending or lifting','pain that improves when lying down','sometimes radiates to buttocks or legs'],
+      causes: 'Muscle strain, poor posture, lifting incorrectly, prolonged sitting, herniated disc, arthritis.',
+      severity: 'mild-moderate',
+      duration: 'Acute: days to weeks. Chronic: 3+ months',
+      advice: [
+        'Continue gentle movement — bed rest actually makes back pain worse',
+        'Apply ice for first 48 hours (20 min on, 20 min off) then switch to heat',
+        'Ibuprofen or naproxen (anti-inflammatory) works better than acetaminophen for back pain',
+        'Try gentle stretches: knee-to-chest, cat-cow stretch, piriformis stretch',
+        'Sleep with a pillow between your knees if on your side',
+        'Avoid heavy lifting for a few days',
+        'When returning to activity, lift with your legs — not your back'
+      ],
+      seeDoctor: ['pain after a fall or injury','pain radiating down the leg below the knee','numbness or tingling in legs or feet','bladder or bowel problems','pain with fever','pain that wakes you at night','severe pain not improving after 2 weeks']
+    },
+
+    // ── GASTROINTESTINAL ──
+    gastroenteritis: {
+      name: 'Stomach Bug (Gastroenteritis)',
+      emoji: '🤢',
+      category: 'gastrointestinal',
+      symptoms: ['nausea','vomiting','diarrhea','stomach cramps','mild fever','headache','muscle aches','loss of appetite'],
+      causes: 'Viral (norovirus most common), bacterial (food poisoning), or parasitic infection. Spreads easily person-to-person.',
+      severity: 'mild-moderate',
+      duration: '1–3 days for viral, up to a week for bacterial',
+      advice: [
+        'HYDRATION IS CRITICAL — replace fluids lost from vomiting/diarrhea',
+        'Sip clear fluids slowly: water, diluted sports drinks, clear broth, coconut water',
+        'Follow the BRAT diet when you can eat: Bananas, Rice, Applesauce, Toast',
+        'Avoid dairy, fatty foods, caffeine, and alcohol until fully recovered',
+        'Rest your stomach for 1–2 hours after vomiting before trying fluids again',
+        'Oral rehydration salts (ORS/Pedialyte) are excellent for replacing electrolytes',
+        'Acetaminophen (not ibuprofen — too hard on an irritated stomach) for fever/cramps'
+      ],
+      seeDoctor: ['signs of dehydration: dry mouth, no urination for 8+ hours, dizziness, sunken eyes','blood in vomit or stool','fever above 102°F','symptoms lasting more than 3 days','severe abdominal pain','unable to keep any fluids down for 24 hours'],
+      prevention: ['Wash hands thoroughly — especially after bathroom and before food','Cook food to proper temperatures','Refrigerate leftovers within 2 hours','Avoid sharing utensils with sick people']
+    },
+
+    acid_reflux: {
+      name: 'Acid Reflux / Heartburn',
+      emoji: '🔥',
+      category: 'gastrointestinal',
+      symptoms: ['burning sensation in chest after eating','sour or bitter taste in mouth','burning feeling that moves upward','worse when lying down or bending over','regurgitation of food','sometimes chronic cough or hoarseness'],
+      causes: 'Stomach acid flows back into esophagus. Triggered by: large meals, fatty/spicy foods, caffeine, alcohol, smoking, lying down after eating.',
+      severity: 'mild',
+      duration: 'Episodes last minutes to hours',
+      advice: [
+        'Antacids (Tums, Rolaids) for immediate relief — neutralize acid fast',
+        'H2 blockers (Pepcid, Zantac) — longer lasting, take 30 min before meals',
+        'Avoid trigger foods: spicy, fatty, fried foods, coffee, alcohol, citrus, tomatoes',
+        'Do NOT lie down for 2–3 hours after eating',
+        'Eat smaller, more frequent meals instead of large ones',
+        'Elevate the head of your bed 6–8 inches',
+        'Wear loose-fitting clothing — tight waistbands increase pressure',
+        'Chew gum after meals — stimulates saliva which neutralizes acid'
+      ],
+      seeDoctor: ['symptoms more than twice a week','symptoms not responding to antacids','difficulty swallowing','chest pain (rule out heart issues)','unexplained weight loss','black or bloody stools']
+    },
+
+    constipation: {
+      name: 'Constipation',
+      emoji: '😖',
+      category: 'gastrointestinal',
+      symptoms: ['fewer than 3 bowel movements per week','hard dry stools','straining during bowel movements','feeling of incomplete emptying','bloating','abdominal discomfort'],
+      causes: 'Low fiber diet, dehydration, lack of exercise, ignoring urge, medications (iron, opioids, antacids), travel, stress.',
+      severity: 'mild',
+      duration: 'Short-term: days. Chronic: months',
+      advice: [
+        'Drink 6–8 glasses of water daily — dehydration is a major cause',
+        'Increase fiber gradually: fruits, vegetables, whole grains, legumes (aim for 25–30g/day)',
+        'Exercise daily — even a 20-minute walk stimulates bowel movement',
+        'Try warm liquids in the morning — warm water with lemon or coffee',
+        'Don\'t ignore the urge — go when you feel it',
+        'Osmotic laxatives (MiraLax) are safe for short-term use',
+        'Stool softeners (Colace) help if straining is painful',
+        'Prune juice or prunes are a natural laxative'
+      ],
+      seeDoctor: ['constipation lasting more than 3 weeks','blood in stool','unexplained weight loss','severe abdominal pain','alternating constipation and diarrhea','new constipation over age 50']
+    },
+
+    // ── FEVER ──
+    fever: {
+      name: 'Fever',
+      emoji: '🌡️',
+      category: 'general',
+      symptoms: ['body temperature above 100.4°F (38°C)','chills','sweating','headache','muscle aches','weakness','loss of appetite','dehydration'],
+      causes: 'The body\'s natural immune response to infection (viral or bacterial), inflammation, or other illness. Fever itself is not the illness — it\'s a symptom.',
+      severity: 'depends on temperature and cause',
+      duration: 'Usually 3–5 days depending on cause',
+      temperatureGuide: {
+        '100.4–102°F (38–38.9°C)': 'Low-grade — monitor, rest, fluids. May not need medication.',
+        '102–103°F (38.9–39.4°C)': 'Moderate — treat with acetaminophen or ibuprofen, stay hydrated.',
+        '103–104°F (39.4–40°C)': 'High — treat aggressively, see doctor if persists >2 days.',
+        'Above 104°F (40°C)': 'Very high — seek medical care promptly.',
+        'Above 105°F (40.6°C)': 'EMERGENCY — call 911 or go to ER immediately.'
+      },
+      advice: [
+        'Rest and drink plenty of fluids — fever causes significant fluid loss',
+        'Acetaminophen (Tylenol): 325–650mg every 4–6 hours as needed (max 3g/day)',
+        'Ibuprofen (Advil): 200–400mg every 4–6 hours — slightly better at reducing fever',
+        'Lukewarm bath or cool damp cloth on forehead — do NOT use ice or cold water',
+        'Dress in light clothing — heavy blankets trap heat',
+        'Keep room temperature comfortable, not cold'
+      ],
+      seeDoctor: ['temperature above 103°F not responding to medication','fever in infants under 3 months (any fever)','fever lasting more than 3 days','fever with severe headache and stiff neck','fever with rash','fever with confusion','fever with difficulty breathing'],
+      childrenNote: 'For children: fever above 100.4°F in infants under 3 months = ER immediately. Above 104°F in any child = call doctor right away. NEVER give aspirin to children — risk of Reye\'s syndrome.'
+    },
+
+    // ── INJURIES & WOUNDS ──
+    cut_wound: {
+      name: 'Cut or Laceration',
+      emoji: '🩹',
+      category: 'injury',
+      symptoms: ['bleeding','pain','skin separation','possible bruising','risk of infection if not treated properly'],
+      causes: 'Sharp objects, falls, accidents.',
+      severity: 'mild to severe depending on depth/size',
+      duration: 'Healing: minor cuts 3–7 days, deeper cuts 1–3 weeks',
+      firstAid: [
+        '1. STOP BLEEDING: Apply firm direct pressure with clean cloth for 10–15 minutes without lifting',
+        '2. If bleeding soaks through, add more material on top — do NOT remove first cloth',
+        '3. CLEAN THE WOUND: Rinse under clean running water for 5+ minutes to remove debris',
+        '4. CLEAN AROUND IT: Gently clean the skin around with mild soap — keep soap out of wound',
+        '5. APPLY ANTIBIOTIC: Thin layer of Neosporin or bacitracin',
+        '6. COVER: Use appropriate bandage. Change daily or when wet/dirty',
+        '7. WATCH FOR INFECTION: Redness spreading, increasing pain, warmth, swelling, pus, fever'
+      ],
+      needsStitches: ['wound longer than 1/2 inch (1.2 cm)','wound is deep or gaping','wound edges won\'t stay together','wound on face','wound won\'t stop bleeding after 15 minutes of pressure','cut from dirty or rusty object','wound with numbness or inability to move nearby area'],
+      tetanusNote: 'Get a tetanus booster if: last tetanus shot was more than 5 years ago AND wound is deep or dirty, OR more than 10 years ago for any wound.',
+      emergency: ['bleeding that won\'t stop after 15 minutes of pressure','spurting blood (arterial bleed)','very deep wound exposing bone or tendon','large avulsion (skin torn away)']
+    },
+
+    burn: {
+      name: 'Burn',
+      emoji: '🔥',
+      category: 'injury',
+      severity: 'mild to severe',
+      burnDegrees: {
+        'First degree (superficial)': 'Red, dry, painful — like sunburn. Affects only outer skin layer.',
+        'Second degree (partial thickness)': 'Blisters, very painful, wet appearance, red or white skin.',
+        'Third degree (full thickness)': 'White, brown, or black. Leather-like. May be painless (nerve damage). ALWAYS needs emergency care.'
+      },
+      firstAid: [
+        '1. COOL THE BURN: Run cool (not cold/ice) water over burn for 10–20 minutes',
+        '2. Remove jewelry or clothing near burn area — before swelling begins',
+        '3. Cover loosely with clean non-fluffy material (cling wrap works well)',
+        '4. Do NOT: apply butter, toothpaste, ice, or any home remedies — they cause more damage',
+        '5. Do NOT burst blisters — they protect against infection',
+        '6. Pain relief: acetaminophen or ibuprofen',
+        '7. Aloe vera gel (pure) can soothe first-degree burns after cooling'
+      ],
+      emergency: ['burn larger than 3 inches or size of palm','burn on face, hands, feet, genitals, or over a joint','third degree burn of any size','chemical or electrical burn','burn with inhalation injury (singed nose hairs, cough, trouble breathing)','burn in elderly, infants, or immunocompromised']
+    },
+
+    sprain: {
+      name: 'Sprain (Twisted Ankle/Wrist)',
+      emoji: '🦶',
+      category: 'injury',
+      symptoms: ['pain','swelling','bruising','limited range of motion','instability','popping sensation at time of injury'],
+      causes: 'Ligament stretched or torn. Common in ankles, wrists, knees.',
+      severity: 'mild to moderate',
+      duration: 'Mild: 1–3 weeks. Severe: 6–8 weeks',
+      firstAid: [
+        'RICE method:',
+        'R — REST: Stop activity. Avoid putting weight on it.',
+        'I — ICE: Apply ice pack wrapped in cloth for 20 minutes, every 2–3 hours for first 48 hours',
+        'C — COMPRESSION: Wrap with elastic bandage — firm but not too tight (check circulation)',
+        'E — ELEVATION: Raise the injured limb above heart level when resting',
+        'Anti-inflammatory medications: ibuprofen or naproxen reduce swelling and pain',
+        'After 48 hours: gentle range-of-motion exercises to restore flexibility',
+        'Crutches if bearing weight is too painful'
+      ],
+      seeDoctor: ['unable to bear any weight','severe swelling or bruising','significant deformity','numbness or tingling','no improvement after 5–7 days','suspected fracture']
+    },
+
+    fracture: {
+      name: 'Possible Fracture (Broken Bone)',
+      emoji: '🦴',
+      category: 'injury',
+      symptoms: ['intense pain at injury site','swelling and bruising','deformity or unnatural angle','inability to move the area','tenderness to touch','grinding sensation'],
+      causes: 'Trauma, falls, sports injuries, osteoporosis (fragility fractures).',
+      severity: 'moderate-severe',
+      firstAid: [
+        '1. Do NOT try to straighten or realign the bone',
+        '2. IMMOBILIZE: Keep the injured area still — use a splint if available',
+        '3. Apply ice wrapped in cloth to reduce swelling (do not apply directly to skin)',
+        '4. Elevate if possible without causing more pain',
+        '5. For open fractures (bone visible): cover with clean cloth — do NOT push bone back in',
+        '6. Pain relief: acetaminophen (avoid ibuprofen if surgery may be needed)',
+        '7. Seek medical attention — X-ray is needed to confirm and assess'
+      ],
+      emergency: ['open fracture (bone breaking skin)','fracture of femur (thigh) or pelvis — massive blood loss risk','fracture after high-energy trauma (car accident, fall from height)','suspected spine or neck fracture — do NOT move person','fracture with signs of nerve damage: numbness, tingling, paralysis']
+    },
+
+    // ── SKIN CONDITIONS ──
+    sunburn: {
+      name: 'Sunburn',
+      emoji: '☀️',
+      category: 'skin',
+      symptoms: ['red painful skin','warm or hot to touch','swelling','blisters (severe)','peeling after 3–7 days','headache and fever with severe sunburn'],
+      causes: 'UV radiation damage to skin cells. Can occur on cloudy days. Reflected off water, sand, snow.',
+      severity: 'mild to moderate',
+      duration: 'Pain peaks at 12–24 hours. Healing 3–7 days for mild, 1–2 weeks severe',
+      advice: [
+        'Get out of the sun immediately',
+        'Cool baths or showers — not cold, which can cause shock',
+        'Apply aloe vera gel or moisturizing lotion while skin is slightly damp',
+        'Do NOT use petroleum jelly, butter, or egg whites — they trap heat',
+        'Ibuprofen reduces inflammation and pain — start early',
+        'Drink extra water — sunburned skin releases fluids',
+        'Take cool, short showers — avoid harsh soaps',
+        'Do NOT pop blisters — leave them to heal naturally',
+        'Cover healing skin if going outside — sun damage accumulates'
+      ],
+      seeDoctor: ['blistering covers a large area','fever above 103°F','extreme pain, confusion, or fainting','severe blistering on face'],
+      prevention: ['SPF 30+ sunscreen every 2 hours','Protective clothing and hats','Seek shade 10am–4pm','UV-blocking sunglasses']
+    },
+
+    allergic_reaction: {
+      name: 'Allergic Reaction',
+      emoji: '😵',
+      category: 'immune',
+      symptoms: {
+        mild: ['hives or itchy rash','runny nose and sneezing','watery itchy eyes','mild swelling'],
+        moderate: ['more widespread hives','swelling of face or lips','nausea','abdominal cramps','diarrhea'],
+        severe_anaphylaxis: ['throat swelling / difficulty swallowing','difficulty breathing / wheezing','rapid weak pulse','dizziness or fainting','drop in blood pressure','CALL 911 IMMEDIATELY']
+      },
+      causes: 'Foods (peanuts, shellfish, eggs, milk, tree nuts), medications, insect stings, latex, environmental allergens.',
+      firstAid: {
+        mild: [
+          'Antihistamine: diphenhydramine (Benadryl) 25–50mg — causes drowsiness',
+          'Non-drowsy: cetirizine (Zyrtec) or loratadine (Claritin)',
+          'Cool compress on hives to reduce itching',
+          'Avoid the trigger allergen',
+          'Calamine lotion for skin reactions'
+        ],
+        anaphylaxis: [
+          '1. CALL 911 IMMEDIATELY',
+          '2. Use epinephrine auto-injector (EpiPen) if available — inject into outer thigh',
+          '3. Lie person flat, elevate legs (unless breathing difficulty — then sit upright)',
+          '4. Give second EpiPen dose after 5–15 minutes if no improvement',
+          '5. Even if EpiPen given — still go to ER (biphasic reaction can occur hours later)',
+          '6. Begin CPR if person becomes unresponsive and stops breathing'
+        ]
+      }
+    },
+
+    // ── MENTAL HEALTH ──
+    anxiety: {
+      name: 'Anxiety / Panic Attack',
+      emoji: '😰',
+      category: 'mental_health',
+      symptoms: {
+        anxiety: ['excessive worry','restlessness or feeling on edge','fatigue','difficulty concentrating','irritability','muscle tension','sleep problems'],
+        panic_attack: ['sudden intense fear','pounding or racing heart','sweating','trembling','shortness of breath','chest pain or discomfort','nausea','dizziness','numbness or tingling','feeling of unreality','fear of losing control or dying']
+      },
+      note: 'Panic attacks feel like heart attacks but are NOT dangerous. They peak within 10 minutes and pass.',
+      advice: [
+        'BOX BREATHING: Inhale 4 counts → hold 4 → exhale 4 → hold 4. Repeat 4 times.',
+        'Ground yourself with the 5-4-3-2-1 technique: Name 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste',
+        'Tell yourself: "This is a panic attack. It is not dangerous. It will pass."',
+        'Cool water on face or wrists — activates the dive reflex, calms heart rate',
+        'Progressive muscle relaxation: tense each muscle group 5 seconds, then release',
+        'Avoid caffeine and alcohol which worsen anxiety',
+        'Regular exercise is one of the most effective long-term anxiety treatments',
+        'Adequate sleep is crucial — sleep deprivation dramatically worsens anxiety'
+      ],
+      seeDoctor: ['panic attacks happening frequently','anxiety interfering with daily life','using alcohol or substances to cope','thoughts of self-harm'],
+      crisis: 'If you are having thoughts of suicide or self-harm, please call or text 988 (Suicide & Crisis Lifeline) immediately.'
+    },
+
+    // ── CARDIOVASCULAR ──
+    hypertension: {
+      name: 'High Blood Pressure (Hypertension)',
+      emoji: '❤️',
+      category: 'cardiovascular',
+      normalRanges: {
+        'Normal': 'Below 120/80 mmHg',
+        'Elevated': '120–129 / below 80 mmHg',
+        'Stage 1 High': '130–139 / 80–89 mmHg',
+        'Stage 2 High': '140+ / 90+ mmHg',
+        'Hypertensive Crisis': '180+ / 120+ mmHg — EMERGENCY'
+      },
+      symptoms: ['often NO symptoms (silent killer)','severe headache (in crisis)','nosebleed','shortness of breath','vision changes (in crisis)','chest pain (in crisis)'],
+      advice: [
+        'DASH Diet: reduce sodium (<1500mg/day), eat more fruits, vegetables, whole grains',
+        'Exercise: 150 minutes moderate aerobic activity per week',
+        'Limit alcohol: max 1 drink/day for women, 2 for men',
+        'Stop smoking if applicable',
+        'Manage stress: meditation, deep breathing, adequate sleep',
+        'Maintain healthy weight — losing 10 lbs can lower BP 5–20 points',
+        'Monitor blood pressure at home — keep a log to share with your doctor',
+        'Take prescribed medications consistently — never stop without doctor guidance'
+      ],
+      emergency: 'If BP is above 180/120 with symptoms (headache, chest pain, vision changes, shortness of breath) — call 911.'
+    },
+
+    // ── DIABETES ──
+    low_blood_sugar: {
+      name: 'Low Blood Sugar (Hypoglycemia)',
+      emoji: '🍬',
+      category: 'metabolic',
+      symptoms: ['shakiness or trembling','sweating','hunger','irritability or mood changes','anxiety','rapid heartbeat','pale skin','dizziness','confusion','blurred vision','headache','in severe cases: loss of consciousness'],
+      causes: 'Too much insulin, skipped meals, excessive exercise, alcohol without food.',
+      bloodSugarLevels: {
+        'Normal fasting': '70–100 mg/dL',
+        'Normal after meal': 'Below 140 mg/dL',
+        'Mild hypoglycemia': '54–69 mg/dL',
+        'Severe hypoglycemia': 'Below 54 mg/dL — needs immediate treatment'
+      },
+      firstAid: [
+        'RULE OF 15: Eat 15 grams of fast-acting carbs',
+        'Options: 4 glucose tablets, 4 oz (half cup) fruit juice or regular soda, 1 tbsp sugar or honey, hard candies (check label for 15g carbs)',
+        'Wait 15 minutes then check blood sugar again',
+        'If still below 70 — repeat',
+        'Once above 70 and feeling better — eat a small snack with protein',
+        'If unconscious: do NOT give food or drink — call 911, use glucagon if available'
+      ],
+      emergency: 'Unconscious or unable to swallow safely — call 911 immediately. Administer glucagon injection if available.'
+    },
+
+    // ── URINARY ──
+    uti: {
+      name: 'Urinary Tract Infection (UTI)',
+      emoji: '🚽',
+      category: 'urinary',
+      symptoms: ['burning sensation when urinating','frequent urge to urinate','cloudy or dark urine','strong-smelling urine','pelvic pain (women)','blood in urine','pressure in lower abdomen'],
+      causes: 'Bacterial infection (usually E. coli). More common in women due to shorter urethra.',
+      severity: 'mild to moderate — can become severe if spreads to kidneys',
+      advice: [
+        'Drink plenty of water — aim for 8+ glasses to flush bacteria',
+        'Urinate frequently — don\'t hold it in',
+        'Cranberry juice may help prevent recurrence but doesn\'t treat active infection',
+        'Over-the-counter phenazopyridine (AZO, Uristat) relieves burning sensation — does NOT cure infection',
+        'WARNING: The orange/red urine color from phenazopyridine is normal',
+        'Apply a heating pad on low to relieve pelvic/abdominal discomfort',
+        'Antibiotics are needed to actually cure a UTI — see a doctor'
+      ],
+      seeDoctor: ['all UTIs should be confirmed and treated with antibiotics','symptoms lasting more than 2 days','fever above 101°F with UTI symptoms (possible kidney infection)','back pain or side pain','UTIs recurring frequently (3+ per year)','UTI in men, children, or pregnant women — always see a doctor'],
+      prevention: ['Stay hydrated','Wipe front to back','Urinate after sexual activity','Avoid irritating products near genitals','Wear breathable cotton underwear']
+    },
+
+    // ── EYE ──
+    conjunctivitis: {
+      name: 'Pink Eye (Conjunctivitis)',
+      emoji: '👁️',
+      category: 'eye',
+      symptoms: ['pink or red color in white of eye','increased tearing','discharge (watery, white, yellow, or green)','itching or burning','gritty feeling','crusting on eyelashes especially morning'],
+      types: {
+        viral: 'Watery discharge, often with cold symptoms. Highly contagious. Self-limiting — clears in 1–2 weeks.',
+        bacterial: 'Thick yellow/green discharge, eye stuck shut in morning. Needs antibiotic eye drops.',
+        allergic: 'Both eyes, intense itching, associated with other allergy symptoms. Not contagious.'
+      },
+      advice: [
+        'Clean discharge gently with clean warm damp cloth — wipe outward from inner corner',
+        'Apply cool or warm compress to relieve discomfort',
+        'Artificial tears for irritation and dryness',
+        'Do NOT wear contact lenses until fully healed',
+        'Do NOT touch or rub eyes — worsens and spreads infection',
+        'Wash hands extremely frequently — extremely contagious (viral/bacterial)',
+        'Use separate towels and pillowcases','Allergic: antihistamine eye drops (Zaditor), oral antihistamines'
+      ],
+      seeDoctor: ['vision changes','severe pain in the eye','sensitivity to light','symptoms not improving in 5–7 days','thick green or yellow discharge (likely bacterial — needs antibiotics)','contact lens wearers with pink eye — always see doctor']
+    },
+
+    // ── CHILDREN SPECIFIC ──
+    croup: {
+      name: 'Croup (Children)',
+      emoji: '👶',
+      category: 'respiratory_children',
+      symptoms: ['distinctive barking cough (like a seal)','hoarse voice','stridor (high-pitched breathing sound)','usually worse at night','mild fever','typically children 6 months to 5 years'],
+      causes: 'Viral infection causing swelling around vocal cords. Most common in fall and winter.',
+      firstAid: [
+        'Stay calm — anxiety and crying make stridor worse',
+        'Cool mist: take child outside in cool night air for 15–20 minutes',
+        'OR run hot shower, fill bathroom with steam, sit with child in steamy bathroom',
+        'Keep child upright — sitting or being held upright eases breathing',
+        'Acetaminophen or ibuprofen for fever and discomfort',
+        'Comfort and reassure the child — calm child = better breathing'
+      ],
+      emergency: ['stridor at rest (not only when crying or coughing)','child turning blue around lips','drooling and unable to swallow','appears very sick or extremely anxious','no improvement after 20 minutes of steam — go to ER']
+    },
+
+    // ── FIRST AID PROCEDURES ──
+  },
+
+  // ─── FIRST AID PROCEDURES ──────────────────────────────────────────────────
+  firstAid: {
+
+    cpr_adult: {
+      name: 'CPR — Adult (12+ years)',
+      emoji: '🫀',
+      steps: [
+        'CHECK scene safety — make sure it\'s safe to approach',
+        'CHECK response: tap shoulders firmly and shout "Are you okay?"',
+        'CALL 911 immediately or have someone else call while you start CPR',
+        'Position: lay person flat on their back on firm surface',
+        'HAND POSITION: Heel of one hand on center of chest (lower half of breastbone), other hand on top, fingers interlaced and lifted',
+        'COMPRESSIONS: Arms straight, compress hard and fast — at least 2 inches deep',
+        'RATE: 100–120 compressions per minute (beat of "Stayin\' Alive" by Bee Gees)',
+        'ALLOW FULL CHEST RECOIL between compressions',
+        'If trained in rescue breathing: 30 compressions → 2 breaths',
+        'If untrained or uncomfortable: HANDS-ONLY CPR is effective — just keep compressing',
+        'Continue until AED arrives, paramedics take over, or person shows signs of life',
+        'AED: Turn on and follow voice instructions — use as soon as available'
+      ],
+      note: 'Hands-only CPR (no mouth-to-mouth) is highly effective for adults and recommended if you are not trained in rescue breathing.'
+    },
+
+    cpr_child: {
+      name: 'CPR — Child (1–12 years)',
+      emoji: '👦',
+      steps: [
+        'CALL 911 — or send someone else to call',
+        'For children: give 5 cycles of CPR (about 2 minutes) BEFORE calling if you are alone',
+        'HAND POSITION: Use heel of ONE hand (or two for larger children) on lower half of breastbone',
+        'COMPRESSIONS: 2 inches deep at 100–120/minute',
+        'BREATHS: 30 compressions → 2 gentle rescue breaths (chest should rise)',
+        'Continue until help arrives'
+      ]
+    },
+
+    cpr_infant: {
+      name: 'CPR — Infant (Under 1 year)',
+      emoji: '👶',
+      steps: [
+        'CALL 911 — give 5 cycles of CPR first if you are alone',
+        'Place infant on firm flat surface',
+        'FINGER POSITION: Two fingers on center of chest, just below nipple line',
+        'COMPRESSIONS: 1.5 inches deep at 100–120/minute',
+        'TILT HEAD GENTLY — less than adults (neutral position)',
+        'BREATHS: 30 compressions → 2 small puffs covering both mouth and nose',
+        'Puffs should be just enough to see chest rise — infants have tiny lungs'
+      ]
+    },
+
+    choking_adult: {
+      name: 'Choking — Adult / Child over 1',
+      emoji: '🫁',
+      steps: [
+        'ASK: "Are you choking?" — if they can cough or speak, encourage coughing',
+        'If cannot cough, speak, or breathe: Act immediately',
+        '5 BACK BLOWS: Stand to side and behind. Give 5 firm blows between shoulder blades with heel of hand',
+        '5 ABDOMINAL THRUSTS (Heimlich): Stand behind, wrap arms around waist',
+        '  - Make fist with one hand, thumb side against abdomen just above navel and well below breastbone',
+        '  - Grab fist with other hand',
+        '  - Give 5 quick upward inward thrusts',
+        'ALTERNATE 5 back blows and 5 abdominal thrusts until object is dislodged or person loses consciousness',
+        'If unconscious: lower to ground, call 911, begin CPR — look for object before giving breaths'
+      ],
+      selfChoking: [
+        'Self-Heimlich: Make fist, place above navel, thrust downward and inward',
+        'OR: Lean over a chair back and thrust upper abdomen against it',
+        'OR: Drop to the floor and thrust your abdomen against hard surface'
+      ]
+    },
+
+    choking_infant: {
+      name: 'Choking — Infant (Under 1 year)',
+      emoji: '👶',
+      steps: [
+        'Hold infant face-down on your forearm, supporting head',
+        '5 BACK BLOWS: Give 5 firm blows between shoulder blades with heel of hand',
+        'FLIP: Turn infant face-up on your other forearm',
+        '5 CHEST THRUSTS: Two fingers on breastbone just below nipple line — 5 downward pushes',
+        'ALTERNATE back blows and chest thrusts until object is dislodged',
+        'NEVER do abdominal thrusts on an infant — can damage organs',
+        'If unconscious: begin infant CPR and call 911'
+      ]
+    },
+
+    severe_bleeding: {
+      name: 'Severe Bleeding Control',
+      emoji: '🩸',
+      steps: [
+        'CALL 911 if bleeding is severe',
+        '1. PROTECT YOURSELF: Use gloves or plastic bag if available to avoid contact with blood',
+        '2. APPLY DIRECT PRESSURE: Press clean cloth, gauze, or clothing firmly on wound',
+        '3. MAINTAIN PRESSURE: Hold continuously for 10–15 minutes — do NOT peek',
+        '4. If blood soaks through: ADD MORE material on top — removing first cloth can dislodge clot',
+        '5. TOURNIQUET (if limb): Apply 2–3 inches above wound, tighten until bleeding stops, note time applied',
+        '6. PRESSURE POINTS: For arm bleeding — press brachial artery (inner upper arm). For leg — femoral artery (groin)',
+        '7. Keep person warm and still',
+        '8. Elevate bleeding limb above heart if possible'
+      ]
+    },
+
+    recovery_position: {
+      name: 'Recovery Position',
+      emoji: '🛌',
+      when: 'Use for unconscious breathing person — prevents choking on vomit',
+      steps: [
+        'Kneel beside person, straighten legs',
+        'Place arm nearest you at right angle to body, elbow bent, palm facing up',
+        'Bring far arm across chest, hold back of hand against nearest cheek',
+        'Pull up far knee so foot is flat on ground',
+        'While keeping hand against cheek, pull on far knee to roll person toward you onto their side',
+        'Adjust top leg so hip and knee are at right angles',
+        'Tilt head back slightly to keep airway open',
+        'Monitor breathing continuously until help arrives'
+      ]
+    },
+
+    anaphylaxis_response: {
+      name: 'Anaphylaxis Response',
+      emoji: '💉',
+      steps: [
+        '1. CALL 911 IMMEDIATELY — this is life-threatening',
+        '2. EPINEPHRINE: Use auto-injector (EpiPen) into outer thigh — can inject through clothing',
+        '  - Hold firmly against thigh for 10 seconds',
+        '  - Note time given',
+        '3. POSITION: Lay person flat, elevate legs. If breathing difficulty — let them sit up',
+        '  - Pregnant: tilt on left side',
+        '  - If unconscious and not breathing: begin CPR',
+        '4. Second dose: Give second EpiPen after 5–15 minutes if no improvement',
+        '5. DO NOT: Have them stand or walk — can be fatal in anaphylaxis',
+        '6. EVEN IF IMPROVING: Still go to ER — symptoms can return (biphasic reaction)'
+      ]
+    }
+  },
+
+  // ─── VITALS REFERENCE ──────────────────────────────────────────────────────
+  vitalsReference: {
+    heartRate: {
+      unit: 'bpm',
+      ranges: {
+        'Newborn (0–1 month)':     { normal: '100–160', slow: '<100', fast: '>160' },
+        'Infant (1–12 months)':    { normal: '100–150', slow: '<100', fast: '>150' },
+        'Toddler (1–3 years)':     { normal: '90–150',  slow: '<90',  fast: '>150' },
+        'Child (3–12 years)':      { normal: '70–120',  slow: '<70',  fast: '>120' },
+        'Adolescent (12–18)':      { normal: '60–100',  slow: '<60',  fast: '>100' },
+        'Adult (18–65)':           { normal: '60–100',  slow: '<60',  fast: '>100' },
+        'Older Adult (65+)':       { normal: '60–100',  slow: '<60',  fast: '>100' },
+        'Athlete (resting)':       { normal: '40–60',   note: 'Normal for trained athletes' }
+      }
+    },
+    bloodPressure: {
+      unit: 'mmHg',
+      ranges: {
+        'Normal':              '< 120 / < 80',
+        'Elevated':            '120–129 / < 80',
+        'High Stage 1':        '130–139 / 80–89',
+        'High Stage 2':        '≥ 140 / ≥ 90',
+        'Crisis — seek care':  '> 180 / > 120',
+        'Low (hypotension)':   '< 90 / < 60 — dizziness, fainting'
+      }
+    },
+    temperature: {
+      unit: '°F / °C',
+      ranges: {
+        'Hypothermia (dangerous)': 'Below 95°F / 35°C',
+        'Low normal':              '97–98°F / 36.1–36.7°C',
+        'Normal':                  '98.6°F / 37°C (average)',
+        'Normal range':            '97–99°F / 36.1–37.2°C',
+        'Low-grade fever':         '99–100.4°F / 37.2–38°C',
+        'Fever':                   '100.4–103°F / 38–39.4°C',
+        'High fever':              '103–104°F / 39.4–40°C',
+        'Very high fever':         '>104°F / >40°C — seek immediate care',
+        'Dangerous':               '>105°F / >40.6°C — EMERGENCY'
+      }
+    },
+    respiratoryRate: {
+      unit: 'breaths per minute',
+      ranges: {
+        'Newborn':       '30–60',
+        'Infant':        '30–50',
+        'Toddler':       '24–40',
+        'Child':         '22–34',
+        'Adolescent':    '12–20',
+        'Adult':         '12–20',
+        'Older Adult':   '12–25'
+      }
+    },
+    oxygenSaturation: {
+      unit: '% SpO2',
+      ranges: {
+        'Normal':                   '95–100%',
+        'Mildly concerning':        '91–94% — monitor closely',
+        'Needs supplemental O2':    '88–90% — seek care',
+        'Emergency':                'Below 88% — call 911'
+      }
+    },
+    bloodSugar: {
+      unit: 'mg/dL',
+      ranges: {
+        'Fasting normal':           '70–100',
+        'Prediabetes (fasting)':    '100–125',
+        'Diabetes (fasting)':       '126+',
+        '2hr after meal (normal)':  'Below 140',
+        '2hr after meal (pre-DM)':  '140–199',
+        '2hr after meal (DM)':      '200+',
+        'Hypoglycemia':             'Below 70 — treat immediately',
+        'Severe hypoglycemia':      'Below 54 — emergency',
+        'Hyperglycemic crisis':     'Above 300 — seek care'
+      }
+    }
+  },
+
+  // ─── MEDICATIONS REFERENCE ────────────────────────────────────────────────
+  medications: {
+    acetaminophen: {
+      brand: 'Tylenol',
+      uses: ['Pain relief','Fever reduction'],
+      adultDose: '325–650mg every 4–6 hours. Maximum 3,000mg per day (or 4,000mg if healthy adult)',
+      childDose: 'Weight-based: 10–15mg/kg every 4–6 hours. Use children\'s formula.',
+      warnings: ['Do NOT exceed maximum dose — liver damage risk','Avoid with alcohol','Check all other medications for hidden acetaminophen (many cold/flu meds contain it)','Avoid in liver disease'],
+      maxPerDay: '3,000mg (to be safe) — 4,000mg hard maximum'
+    },
+    ibuprofen: {
+      brand: 'Advil, Motrin',
+      uses: ['Pain relief','Fever reduction','Anti-inflammatory (swelling, arthritis, muscle pain)'],
+      adultDose: '200–400mg every 4–6 hours. Maximum 1,200mg/day OTC (doctors can prescribe more)',
+      childDose: '5–10mg/kg every 6–8 hours. NOT for infants under 6 months.',
+      warnings: ['Take with food to protect stomach','Avoid with kidney disease or dehydration','Avoid in last trimester of pregnancy','Can increase bleeding risk','Avoid with certain blood thinners'],
+      doNotGiveTo: 'Infants under 6 months, people with peptic ulcer, kidney disease, heart failure'
+    },
+    aspirin: {
+      brand: 'Bayer',
+      uses: ['Pain relief','Anti-inflammatory','Fever (adults only)','Heart attack prevention (low dose 81mg)'],
+      adultDose: '325–650mg every 4–6 hours for pain. 81mg daily for heart protection.',
+      warnings: ['NEVER give to children or teenagers — risk of Reye\'s syndrome','Increases bleeding risk','Avoid before surgery','Avoid with blood thinners'],
+      doNotGiveTo: 'Children, teenagers, pregnant women, anyone with bleeding disorders'
+    },
+    antihistamines: {
+      diphenhydramine: {
+        brand: 'Benadryl',
+        dose: '25–50mg every 4–6 hours',
+        notes: 'Causes significant drowsiness. Fast-acting. Good for acute allergic reactions and sleep.'
+      },
+      cetirizine: {
+        brand: 'Zyrtec',
+        dose: '10mg once daily',
+        notes: 'Non-drowsy (mild drowsiness possible). Lasts 24 hours. Good for daily allergy control.'
+      },
+      loratadine: {
+        brand: 'Claritin',
+        dose: '10mg once daily',
+        notes: 'Non-drowsy. Lasts 24 hours. Good for chronic allergies.'
+      }
+    }
+  },
+
+  // ─── SYMPTOM → CONDITION MAPPER ───────────────────────────────────────────
+  // Used by the offline AI to match symptoms to conditions
+  symptomMap: {
+    'headache': ['headache_tension','migraine','fever','hypertension'],
+    'head pain': ['headache_tension','migraine'],
+    'throbbing head': ['migraine'],
+    'runny nose': ['common_cold','flu','allergic_reaction'],
+    'stuffy nose': ['common_cold','flu'],
+    'sore throat': ['common_cold','flu'],
+    'cough': ['common_cold','flu','asthma_attack'],
+    'fever': ['fever','common_cold','flu','gastroenteritis','uti'],
+    'chills': ['fever','flu'],
+    'nausea': ['gastroenteritis','migraine','anxiety','low_blood_sugar'],
+    'vomiting': ['gastroenteritis','migraine'],
+    'diarrhea': ['gastroenteritis','allergic_reaction'],
+    'stomach pain': ['gastroenteritis','acid_reflux','constipation'],
+    'stomach ache': ['gastroenteritis','acid_reflux'],
+    'heartburn': ['acid_reflux'],
+    'burning chest': ['acid_reflux'],
+    'back pain': ['back_pain'],
+    'lower back': ['back_pain','uti'],
+    'fatigue': ['common_cold','flu','fever','low_blood_sugar'],
+    'tired': ['common_cold','flu','fever','anxiety'],
+    'dizzy': ['low_blood_sugar','hypertension','anxiety'],
+    'dizziness': ['low_blood_sugar','anxiety'],
+    'cut': ['cut_wound'],
+    'bleeding': ['cut_wound','severe_bleeding'],
+    'wound': ['cut_wound'],
+    'burn': ['burn','sunburn'],
+    'sunburn': ['sunburn'],
+    'sprain': ['sprain'],
+    'twisted': ['sprain'],
+    'ankle': ['sprain'],
+    'broken': ['fracture'],
+    'fracture': ['fracture'],
+    'rash': ['allergic_reaction','sunburn'],
+    'hives': ['allergic_reaction'],
+    'itching': ['allergic_reaction','conjunctivitis'],
+    'anxiety': ['anxiety'],
+    'panic': ['anxiety'],
+    'stress': ['anxiety'],
+    'heart racing': ['anxiety','low_blood_sugar'],
+    'palpitations': ['anxiety'],
+    'eye': ['conjunctivitis'],
+    'pink eye': ['conjunctivitis'],
+    'red eye': ['conjunctivitis'],
+    'urination burning': ['uti'],
+    'frequent urination': ['uti'],
+    'peeing a lot': ['uti'],
+    'shaking': ['low_blood_sugar','anxiety'],
+    'trembling': ['low_blood_sugar','anxiety'],
+    'constipation': ['constipation'],
+    'cant poop': ['constipation'],
+    'barking cough': ['croup'],
+    'blood pressure': ['hypertension'],
+    'high blood pressure': ['hypertension']
+  }
+};
+
+// ─── OFFLINE RESPONSE ENGINE ──────────────────────────────────────────────
+class HealioOfflineEngine {
+
+  constructor() {
+    this.kb = HEALIO_KB;
+  }
+
+  // Main entry point — takes a user message, returns a response
+  respond(userMessage) {
+    const msg = userMessage.toLowerCase().trim();
+
+    // 1. Check for emergency
+    const emergency = this.checkEmergency(msg);
+    if (emergency) return emergency;
+
+    // 2. Check for first aid procedure request
+    const firstAid = this.checkFirstAid(msg);
+    if (firstAid) return firstAid;
+
+    // 3. Check for vitals question
+    const vitals = this.checkVitals(msg);
+    if (vitals) return vitals;
+
+    // 4. Check for medication question
+    const meds = this.checkMedication(msg);
+    if (meds) return meds;
+
+    // 5. Match symptoms to conditions
+    const condition = this.matchCondition(msg);
+    if (condition) return condition;
+
+    // 6. General health fallback
+    return this.generalFallback(msg);
+  }
+
+  checkEmergency(msg) {
+    const found = this.kb.emergencyKeywords.find(kw => msg.includes(kw));
+    if (found) {
+      return {
+        type: 'emergency',
+        text: `🚨 This sounds like a potential emergency. Please call 911 or have someone take you to the emergency room immediately.\n\nDo not wait or try to self-treat if you are experiencing: ${found}.\n\nIf you are in the US, call 911 now. Stay calm, tell them your location and main symptom.`,
+        urgent: true
+      };
+    }
+    return null;
+  }
+
+  checkFirstAid(msg) {
+    if (msg.includes('cpr') || (msg.includes('not breathing') && msg.includes('help'))) {
+      const proc = msg.includes('infant') || msg.includes('baby') ? this.kb.firstAid.cpr_infant
+                 : msg.includes('child') || msg.includes('kid') ? this.kb.firstAid.cpr_child
+                 : this.kb.firstAid.cpr_adult;
+      return { type: 'firstaid', data: proc, text: this.formatProcedure(proc) };
+    }
+    if (msg.includes('choking')) {
+      const proc = (msg.includes('infant') || msg.includes('baby')) ? this.kb.firstAid.choking_infant : this.kb.firstAid.choking_adult;
+      return { type: 'firstaid', data: proc, text: this.formatProcedure(proc) };
+    }
+    if (msg.includes('bleeding') && (msg.includes('severe') || msg.includes('stop') || msg.includes('a lot'))) {
+      return { type: 'firstaid', data: this.kb.firstAid.severe_bleeding, text: this.formatProcedure(this.kb.firstAid.severe_bleeding) };
+    }
+    if (msg.includes('anaphylaxis') || (msg.includes('epipen') ) || (msg.includes('throat') && msg.includes('swelling'))) {
+      return { type: 'firstaid', data: this.kb.firstAid.anaphylaxis_response, text: this.formatProcedure(this.kb.firstAid.anaphylaxis_response) };
+    }
+    if (msg.includes('recovery position') || (msg.includes('unconscious') && msg.includes('breathing'))) {
+      return { type: 'firstaid', data: this.kb.firstAid.recovery_position, text: this.formatProcedure(this.kb.firstAid.recovery_position) };
+    }
+    return null;
+  }
+
+  checkVitals(msg) {
+    const isVitalsQ = msg.includes('normal') || msg.includes('range') || msg.includes('should be') || msg.includes('what is') || msg.includes('reference');
+    if (!isVitalsQ && !msg.includes('bpm') && !msg.includes('blood pressure') && !msg.includes('temperature') && !msg.includes('oxygen') && !msg.includes('blood sugar') && !msg.includes('heart rate')) return null;
+
+    let ref = null;
+    let title = '';
+    if (msg.includes('heart rate') || msg.includes('pulse') || msg.includes('bpm')) {
+      ref = this.kb.vitalsReference.heartRate; title = 'Heart Rate Reference';
+    } else if (msg.includes('blood pressure')) {
+      ref = this.kb.vitalsReference.bloodPressure; title = 'Blood Pressure Reference';
+    } else if (msg.includes('temperature') || msg.includes('fever')) {
+      ref = this.kb.vitalsReference.temperature; title = 'Body Temperature Reference';
+    } else if (msg.includes('oxygen') || msg.includes('spo2') || msg.includes('o2')) {
+      ref = this.kb.vitalsReference.oxygenSaturation; title = 'Oxygen Saturation Reference';
+    } else if (msg.includes('blood sugar') || msg.includes('glucose')) {
+      ref = this.kb.vitalsReference.bloodSugar; title = 'Blood Sugar Reference';
+    }
+
+    if (!ref) return null;
+
+    let text = `📊 ${title}\n\n`;
+    Object.entries(ref.ranges || ref).forEach(([k, v]) => {
+      if (k !== 'unit') text += `• ${k}: ${typeof v === 'object' ? v.normal || JSON.stringify(v) : v}\n`;
+    });
+    if (ref.unit) text += `\nUnit: ${ref.unit}`;
+    return { type: 'vitals', text };
+  }
+
+  checkMedication(msg) {
+    const medWords = ['tylenol','acetaminophen','ibuprofen','advil','motrin','aspirin','benadryl','zyrtec','claritin','antihistamine'];
+    const found = medWords.find(m => msg.includes(m));
+    if (!found) return null;
+
+    let med = null;
+    if (found.includes('tylenol') || found.includes('acetaminophen')) med = this.kb.medications.acetaminophen;
+    else if (found.includes('ibuprofen') || found.includes('advil') || found.includes('motrin')) med = this.kb.medications.ibuprofen;
+    else if (found.includes('aspirin')) med = this.kb.medications.aspirin;
+    else if (found.includes('benadryl') || found.includes('diphenhydramine')) med = this.kb.medications.antihistamines.diphenhydramine;
+    else if (found.includes('zyrtec') || found.includes('cetirizine')) med = this.kb.medications.antihistamines.cetirizine;
+    else if (found.includes('claritin') || found.includes('loratadine')) med = this.kb.medications.antihistamines.loratadine;
+
+    if (!med) return null;
+
+    let text = `💊 ${med.brand || 'Medication Info'}\n\n`;
+    if (med.uses) text += `Uses: ${med.uses.join(', ')}\n\n`;
+    if (med.adultDose) text += `Adult dose: ${med.adultDose}\n`;
+    if (med.childDose) text += `Child dose: ${med.childDose}\n`;
+    if (med.dose) text += `Dose: ${med.dose}\n`;
+    if (med.notes) text += `Notes: ${med.notes}\n`;
+    if (med.warnings) text += `\n⚠️ Warnings:\n${med.warnings.map(w => '• ' + w).join('\n')}`;
+    if (med.doNotGiveTo) text += `\n\n🚫 Do NOT give to: ${med.doNotGiveTo}`;
+    text += '\n\n⚕️ Always read the label and consult a pharmacist or doctor with questions.';
+    return { type: 'medication', text };
+  }
+
+  matchCondition(msg) {
+    // Score each condition based on keyword matches
+    const scores = {};
+    Object.entries(this.kb.symptomMap).forEach(([symptom, conditions]) => {
+      if (msg.includes(symptom)) {
+        conditions.forEach(c => { scores[c] = (scores[c] || 0) + 1; });
+      }
+    });
+
+    if (Object.keys(scores).length === 0) return null;
+
+    // Get top match
+    const top = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+    const cond = this.kb.conditions[top];
+    if (!cond) return null;
+
+    return { type: 'condition', data: cond, text: this.formatCondition(cond) };
+  }
+
+  formatCondition(c) {
+    let text = `${c.emoji} **${c.name}**\n\n`;
+
+    if (c.causes) text += `**What it is:** ${c.causes}\n\n`;
+
+    if (c.duration) text += `**Typical duration:** ${c.duration}\n\n`;
+
+    const advice = c.advice || c.firstAid;
+    if (advice) {
+      text += `**What to do:**\n`;
+      advice.forEach(a => text += `• ${a}\n`);
+    }
+
+    if (c.seeDoctor && c.seeDoctor.length) {
+      text += `\n**See a doctor if:**\n`;
+      c.seeDoctor.forEach(s => text += `• ${s}\n`);
+    }
+
+    if (c.childrenNote) text += `\n👶 **For children:** ${c.childrenNote}`;
+
+    if (c.prevention) {
+      text += `\n\n**Prevention:**\n`;
+      c.prevention.forEach(p => text += `• ${p}\n`);
+    }
+
+    text += '\n\n⚕️ This is general guidance only. If you are unsure or symptoms are severe, please see a healthcare professional.';
+    return text;
+  }
+
+  formatProcedure(proc) {
+    let text = `${proc.emoji} **${proc.name}**\n\n`;
+    if (proc.when) text += `*When to use: ${proc.when}*\n\n`;
+    proc.steps.forEach((s, i) => text += `${i + 1}. ${s}\n`);
+    if (proc.selfChoking) {
+      text += `\n**If alone and choking:**\n`;
+      proc.selfChoking.forEach(s => text += `• ${s}\n`);
+    }
+    if (proc.note) text += `\n💡 ${proc.note}`;
+    return text;
+  }
+
+  generalFallback(msg) {
+    const responses = [
+      'I\'m Healio — I\'m working offline right now. I have detailed information on common conditions, first aid procedures, medications, and vital sign references. Try describing your symptoms (like "I have a headache" or "I feel nauseous") and I\'ll do my best to help. 💙',
+      'I can help with many health questions even without internet. Tell me your symptoms and I\'ll look through my medical knowledge base. For emergencies, always call 911.',
+      'Offline mode active. I can help with: symptoms and conditions, first aid (CPR, choking, burns, bleeding), medication dosages, and vital sign ranges. What\'s going on?'
+    ];
+    return { type: 'fallback', text: responses[Math.floor(Math.random() * responses.length)] };
+  }
+
+  // Check if a specific condition exists
+  getCondition(name) {
+    return this.kb.conditions[name] || null;
+  }
+
+  // Get all conditions in a category
+  getByCategory(category) {
+    return Object.values(this.kb.conditions).filter(c => c.category === category);
+  }
+
+  // Interpret a vital sign value
+  interpretVital(type, value) {
+    const ref = this.kb.vitalsReference[type];
+    if (!ref) return null;
+    // Simple interpretation — could be expanded
+    return ref;
+  }
+}
+
+// Export for use in the app
+if (typeof module !== 'undefined') module.exports = { HEALIO_KB, HealioOfflineEngine };
+
+</script>
+<style>
+:root{--bg:#050D1A;--bg2:#0A1628;--bg3:#0F1E38;--card:#111E35;--card2:#162340;--border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--hblue:#00D4FF;--hblue-dim:rgba(0,212,255,0.10);--hblue-glow:rgba(0,212,255,0.25);--trust:#006FFF;--red:#FF3B30;--red-dim:rgba(255,59,48,0.12);--green:#34C759;--green-dim:rgba(52,199,89,0.12);--amber:#FF9F0A;--amber-dim:rgba(255,159,10,0.12);--text:#F0F6FF;--text2:#7A90B0;--text3:#3D546A;--r:18px;--r2:14px;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+html,body{height:100%;background:var(--bg)}
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--text);height:100dvh;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto}
+.scrollable{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.scrollable::-webkit-scrollbar{display:none}
+.topbar{padding:calc(10px + var(--safe-t)) 18px 10px;display:flex;align-items:center;justify-content:space-between;background:rgba(5,13,26,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-shrink:0;z-index:30}
+.tb-brand{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-weight:800;font-size:1.3rem;font-weight:800;letter-spacing:-0.3px}
+.tb-brand span{color:var(--hblue)}
+.tb-right{display:flex;align-items:center;gap:8px}
+.mode-pill{display:flex;align-items:center;gap:5px;border-radius:50px;padding:4px 10px;font-size:0.65rem;font-weight:700;border:1px solid;transition:all 0.3s}
+.mode-pill.online{background:rgba(0,212,255,0.08);color:var(--hblue);border-color:rgba(0,212,255,0.2)}
+.mode-pill.offline{background:rgba(255,159,10,0.08);color:var(--amber);border-color:rgba(255,159,10,0.2)}
+.mode-pill.busy{background:rgba(0,111,255,0.08);color:var(--trust);border-color:rgba(0,111,255,0.2)}
+.mdot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.mdot.pulse{animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.nav{display:flex;background:rgba(5,13,26,0.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding-bottom:var(--safe-b);flex-shrink:0}
+.nt{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:0.6rem;font-weight:700;color:var(--text3);cursor:pointer;border:none;background:none;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.5px;position:relative}
+.nt .ni{font-size:1.1rem;transition:transform 0.2s}
+.nt.active{color:var(--hblue)}
+.nt.active .ni{transform:scale(1.15)}
+.nt-ind{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:18px;height:2px;border-radius:2px;background:var(--hblue);opacity:0;transition:opacity 0.2s}
+.nt.active .nt-ind{opacity:1}
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden}
+.screen.active{display:flex}
+
+/* DASHBOARD */
+.dash-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:20px}
+.dash-scroll::-webkit-scrollbar{display:none}
+.dash-hero{padding:18px 18px 0;display:flex;flex-direction:column;align-items:center;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,212,255,0.07) 0%,transparent 70%)}
+.greeting-row{width:100%;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.greeting-text h2{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-weight:800;font-size:1.25rem;font-weight:800}
+.greeting-text p{font-size:0.8rem;color:var(--text2);margin-top:3px}
+.notif-btn{width:34px;height:34px;border-radius:11px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:0.95rem;cursor:pointer;position:relative}
+.notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg)}
+.char-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:8px}
+.char-svg-wrap{width:130px;height:130px;position:relative;animation:float 3.5s ease-in-out infinite;cursor:pointer}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.char-glow{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:80px;height:16px;background:var(--hblue);border-radius:50%;filter:blur(12px);opacity:0.3;animation:gp 3.5s ease-in-out infinite}
+@keyframes gp{0%,100%{opacity:0.3;width:80px}50%{opacity:0.45;width:100px}}
+.speech-bub{background:var(--card);border:1px solid var(--border2);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:0.8rem;font-weight:500;color:var(--text2);line-height:1.5;max-width:250px;text-align:center;transition:all 0.3s;margin-top:6px}
+.dash-cards{padding:0 14px;display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.dash-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.dc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;gap:7px}
+.dc:active{transform:scale(0.97);border-color:var(--hblue)}
+.dc.full{grid-column:span 2;flex-direction:row;align-items:center}
+.dc-ico{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.dc-ico.bl{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.15)}
+.dc-ico.rd{background:var(--red-dim);border:1px solid rgba(255,59,48,0.15)}
+.dc-ico.gr{background:var(--green-dim);border:1px solid rgba(52,199,89,0.15)}
+.dc-ico.am{background:var(--amber-dim);border:1px solid rgba(255,159,10,0.15)}
+.dc-lbl{font-size:0.65rem;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.dc-val{font-size:0.95rem;font-weight:700;color:var(--text)}
+.dc-val.good{color:var(--green)}.dc-val.warn{color:var(--amber)}.dc-val.alert{color:var(--red)}
+.dc-sub{font-size:0.7rem;color:var(--text3)}
+.dc-btn{margin-left:auto;background:var(--hblue);color:#050D1A;border:none;border-radius:50px;padding:8px 14px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer;flex-shrink:0}
+
+/* CHAT */
+.chat-top{background:var(--bg2);padding:9px 15px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.chat-mini-char{width:36px;height:36px;flex-shrink:0}
+.chat-speech{flex:1;font-size:0.79rem;color:var(--text2);line-height:1.4;transition:opacity 0.3s}
+.qrow{display:flex;gap:7px;padding:8px 13px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.qrow::-webkit-scrollbar{display:none}
+.qp{flex-shrink:0;background:var(--card);border:1px solid var(--border2);border-radius:50px;padding:6px 12px;font-size:0.73rem;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all 0.18s;display:flex;align-items:center;gap:5px}
+.qp:active{background:var(--hblue-dim);border-color:var(--hblue);color:var(--hblue);transform:scale(0.95)}
+.messages{flex:1;overflow-y:auto;padding:11px 13px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+.messages::-webkit-scrollbar{display:none}
+.msg{display:flex;gap:7px;align-items:flex-end;animation:msgIn 0.25s ease}
+.msg.user{flex-direction:row-reverse}
+@keyframes msgIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.mav{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:0.58rem;font-weight:800}
+.mav.h{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);color:var(--hblue)}
+.mav.u{background:rgba(0,111,255,0.15);border:1px solid rgba(0,111,255,0.25);color:var(--trust)}
+.mbub{max-width:80%;padding:10px 13px;border-radius:14px;font-size:0.83rem;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.msg.healio .mbub{background:var(--card);color:var(--text);border-radius:4px 14px 14px 14px;border:1px solid var(--border2)}
+.msg.user .mbub{background:rgba(0,111,255,0.18);color:var(--text);border-radius:14px 4px 14px 14px;border:1px solid rgba(0,111,255,0.28)}
+.mbub.em{background:var(--red-dim)!important;border-color:rgba(255,59,48,0.3)!important}
+.mbub.off::before{content:'';display:none}
+.typing{display:flex;gap:4px;padding:2px 0;align-items:center}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--hblue);animation:td 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-6px);opacity:1}}
+.ibar{padding:8px 11px calc(8px + var(--safe-b));background:var(--bg2);border-top:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-shrink:0}
+.ci{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:50px;padding:10px 16px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.86rem;color:var(--text);outline:none;transition:border-color 0.2s;-webkit-appearance:none}
+.ci:focus{border-color:var(--hblue)}.ci::placeholder{color:var(--text3)}
+.ib{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;transition:all 0.2s}
+.ib-s{background:var(--hblue);box-shadow:0 0 14px rgba(0,212,255,0.28)}.ib-s:active{transform:scale(0.88)}
+.ib-s svg{width:15px;height:15px;fill:var(--bg)}.ib-m{background:var(--card);border:1px solid var(--border2)}
+.ib-m.rec{background:var(--red);animation:blink 0.6s infinite}
+.key-ban{background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(0,111,255,0.06));border-bottom:1px solid rgba(0,212,255,0.15);padding:11px 15px;display:none;flex-direction:column;gap:7px;flex-shrink:0}
+.key-ban.show{display:flex}
+.key-ban h3{font-size:0.82rem;font-weight:700;color:var(--text)}
+.key-ban p{font-size:0.7rem;color:var(--text2)}
+.key-row{display:flex;gap:7px}
+.ki{flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.8rem;color:var(--text);outline:none;-webkit-appearance:none;transition:border-color 0.2s}
+.ki:focus{border-color:var(--hblue)}
+.ks{background:var(--hblue);color:var(--bg);border:none;border-radius:10px;padding:9px 13px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer}
+.kskip{font-size:0.68rem;color:var(--text3);text-align:center;cursor:pointer}
+.kskip span{color:var(--hblue);text-decoration:underline}
+
+/* LIBRARY */
+.lib-wrap{padding:13px;display:flex;flex-direction:column;gap:11px}
+.lib-search{background:var(--card);border:1px solid var(--border2);border-radius:50px;padding:10px 17px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.84rem;color:var(--text);outline:none;width:100%;-webkit-appearance:none;transition:border-color 0.2s}
+.lib-search:focus{border-color:var(--hblue)}.lib-search::placeholder{color:var(--text3)}
+.slbl{font-size:0.62rem;font-weight:800;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:12px;cursor:pointer;transition:border-color 0.2s;display:flex;align-items:center;gap:9px}
+.cat-card:active{border-color:var(--hblue)}
+.cond-list{display:flex;flex-direction:column;gap:7px}
+.cond-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color 0.2s}
+.cond-card:active{border-color:var(--hblue)}
+.sev-tag{font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:50px}
+.sv-m{background:var(--green-dim);color:var(--green)}.sv-mo{background:var(--amber-dim);color:var(--amber)}.sv-s{background:var(--red-dim);color:var(--red)}
+.back-btn{display:flex;align-items:center;gap:5px;font-size:0.78rem;font-weight:600;color:var(--hblue);cursor:pointer}
+.cond-detail{background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.cd-title{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-weight:800;font-size:1rem;font-weight:700}
+.cd-st{font-size:0.63rem;font-weight:800;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+.cd-t{font-size:0.82rem;color:var(--text2);line-height:1.6}
+.cd-it{font-size:0.82rem;color:var(--text2);line-height:1.5;padding-left:13px;position:relative;margin-bottom:3px}
+.cd-it::before{content:'•';position:absolute;left:0;color:var(--hblue)}
+.warn-box{background:var(--red-dim);border:1px solid rgba(255,59,48,0.2);border-radius:11px;padding:11px}
+.warn-t{font-size:0.64rem;font-weight:800;color:var(--red);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.chat-cta{background:var(--hblue-dim);color:var(--hblue);border:1px solid rgba(0,212,255,0.2);border-radius:11px;padding:11px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;text-align:center;transition:all 0.2s}
+.chat-cta:active{background:var(--hblue);color:var(--bg)}
+
+/* FIRST AID */
+.fa-wrap{padding:13px;display:flex;flex-direction:column;gap:9px}
+.emg-ban{background:var(--red-dim);border:1px solid rgba(255,59,48,0.2);border-radius:var(--r2);padding:11px 13px;display:flex;gap:9px;align-items:center}
+.emg-ban p{font-size:0.78rem;color:var(--red);font-weight:500;line-height:1.4}
+.proc-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.2s}
+.proc-card.d{border-color:rgba(255,59,48,0.2);background:rgba(255,59,48,0.04)}
+.proc-card:active{border-color:var(--hblue)}
+.pn{font-size:0.86rem;font-weight:600;color:var(--text)}.pd{font-size:0.68rem;color:var(--text3);margin-top:1px}
+.proc-detail{background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:15px;display:flex;flex-direction:column;gap:9px}
+.ps{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
+.ps:last-child{border-bottom:none}
+.psn{width:21px;height:21px;border-radius:50%;background:var(--hblue-dim);border:1px solid rgba(0,212,255,0.2);display:flex;align-items:center;justify-content:center;font-size:0.66rem;font-weight:800;color:var(--hblue);flex-shrink:0;margin-top:1px}
+.pst{font-size:0.81rem;color:var(--text2);line-height:1.5;flex:1}
+
+/* VITALS */
+.vit-wrap{padding:13px;display:flex;flex-direction:column;gap:9px}
+.vit-ban{background:linear-gradient(135deg,#0F2142,#050D1A);border:1px solid var(--border2);border-radius:var(--r);padding:15px}
+.vit-ban h2{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-weight:800;font-size:0.92rem;font-weight:700}
+.vit-ban p{font-size:0.77rem;color:var(--text2);margin-top:3px}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.vcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:12px;display:flex;flex-direction:column;gap:5px;transition:border-color 0.2s}
+.vcard:focus-within{border-color:var(--hblue)}
+.vic{font-size:1.25rem}.vil{font-size:0.62rem;font-weight:700;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase}
+.viv{font-size:0.97rem;font-weight:700}.viv.e{font-size:0.75rem;color:var(--text3);font-weight:400}
+.virow{display:flex;gap:6px}
+.vii{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.78rem;color:var(--text);outline:none;min-width:0;-webkit-appearance:none;transition:border-color 0.2s}
+.vii:focus{border-color:var(--hblue)}.vii::placeholder{color:var(--text3)}
+.vis{background:var(--hblue);color:var(--bg);border:none;border-radius:8px;padding:7px 11px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer}
+.pgrid{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px}
+.pn2{width:26px;height:26px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.76rem;font-weight:600;color:var(--text2);cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center}
+.pn2.sel{background:var(--red-dim);color:var(--red);border-color:rgba(255,59,48,0.3)}
+.hcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px}
+.hlog{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.hlog:last-child{border-bottom:none}
+.hdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.htext{flex:1;font-size:0.79rem;color:var(--text);font-weight:500}.htime{font-size:0.64rem;color:var(--text3)}
+
+/* INSTALL */
+.inst-ban{position:fixed;bottom:0;left:50%;transform:translate(-50%,100%);width:100%;max-width:430px;z-index:100;background:var(--card2);border-top:1px solid var(--border2);padding:13px 17px calc(13px + var(--safe-b));display:flex;align-items:center;gap:11px;transition:transform 0.4s;box-shadow:0 -8px 32px rgba(0,0,0,0.5)}
+.inst-ban.show{transform:translate(-50%,0)}
+.ibi{flex:1}.ibi h3{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-weight:800;font-size:0.86rem;font-weight:700}.ibi p{font-size:0.7rem;color:var(--text2);margin-top:1px}
+.ibc{background:var(--hblue);color:var(--bg);border:none;border-radius:11px;padding:9px 14px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer}
+.ibx{background:none;border:none;color:var(--text3);font-size:1rem;cursor:pointer;padding:4px}
+</style>
+</head>
+<body>
+<div class="app">
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-brand">heal<span>io</span></div>
+  <div class="tb-right">
+    <div class="mode-pill offline" id="modePill"><div class="mdot" id="mdot"></div><span id="modeLabel">Offline</span></div>
+  </div>
+</div>
+
+<!-- DASH -->
+<div class="screen active" id="s-dash">
+<div class="dash-scroll">
+  <div class="dash-hero">
+    <div class="greeting-row">
+      <div class="greeting-text"><h2 id="greet">Good morning! 👋</h2><p>How are you feeling today?</p></div>
+      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+    </div>
+    <div class="char-wrap">
+      <div class="char-svg-wrap" onclick="goTab('chat')" title="Chat with Healio">
+        <svg width="130" height="130" viewBox="0 0 130 130" fill="none">
+          <defs>
+            <linearGradient id="bG" x1="25" y1="65" x2="105" y2="125" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#E8F4FF"/><stop offset="100%" stop-color="#BDD8F0"/></linearGradient>
+            <linearGradient id="hG" x1="27" y1="15" x2="103" y2="85" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#F0F8FF"/><stop offset="100%" stop-color="#C8E0F4"/></linearGradient>
+            <linearGradient id="vG" x1="35" y1="35" x2="95" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0A1A30"/><stop offset="100%" stop-color="#050D1A"/></linearGradient>
+            <linearGradient id="aG" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#D4E8F8"/><stop offset="100%" stop-color="#B8D0E8"/></linearGradient>
+          </defs>
+          <!-- glow -->
+          <ellipse cx="65" cy="120" rx="38" ry="7" fill="#00D4FF" opacity="0.15"/>
+          <!-- body -->
+          <rect x="25" y="65" width="80" height="58" rx="26" fill="url(#bG)"/>
+          <!-- head -->
+          <ellipse cx="65" cy="50" rx="36" ry="34" fill="url(#hG)"/>
+          <!-- visor -->
+          <rect x="35" y="35" width="60" height="24" rx="12" fill="#050D1A"/>
+          <rect x="36" y="36" width="58" height="22" rx="11" fill="url(#vG)"/>
+          <!-- EYES: happy -->
+          <g id="ey-happy">
+            <path d="M50 48 Q47 44 44 48" stroke="#00D4FF" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <path d="M86 48 Q83 44 80 48" stroke="#00D4FF" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          </g>
+          <!-- EYES: concerned -->
+          <g id="ey-concerned" opacity="0">
+            <circle cx="47" cy="47" r="3.5" fill="#00D4FF" opacity="0.85"/>
+            <circle cx="83" cy="47" r="3.5" fill="#00D4FF" opacity="0.85"/>
+            <path d="M41 41 Q47 44 53 41" stroke="#00D4FF" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+            <path d="M77 41 Q83 44 89 41" stroke="#00D4FF" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+          </g>
+          <!-- EYES: alert -->
+          <g id="ey-alert" opacity="0">
+            <rect x="41" y="43" width="11" height="7" rx="2" fill="#FF3B30" opacity="0.9"/>
+            <rect x="78" y="43" width="11" height="7" rx="2" fill="#FF3B30" opacity="0.9"/>
+          </g>
+          <!-- EYES: focused -->
+          <g id="ey-focused" opacity="0">
+            <rect x="41" y="45" width="11" height="4" rx="2" fill="#00D4FF"/>
+            <rect x="78" y="45" width="11" height="4" rx="2" fill="#00D4FF"/>
+          </g>
+          <!-- Red cross -->
+          <rect x="59" y="82" width="12" height="3.5" rx="1.75" fill="#FF3B30"/>
+          <rect x="63" y="78" width="3.5" height="12" rx="1.75" fill="#FF3B30"/>
+          <!-- feet glow -->
+          <ellipse cx="46" cy="122" rx="13" ry="4" fill="#00D4FF" opacity="0.35"/>
+          <ellipse cx="84" cy="122" rx="13" ry="4" fill="#00D4FF" opacity="0.35"/>
+          <!-- arms -->
+          <rect x="9" y="70" width="18" height="40" rx="9" fill="url(#aG)"/>
+          <rect x="103" y="70" width="18" height="40" rx="9" fill="url(#aG)"/>
+          <!-- legs -->
+          <rect x="37" y="116" width="20" height="13" rx="8.5" fill="#C0D8EE"/>
+          <rect x="73" y="116" width="20" height="13" rx="8.5" fill="#C0D8EE"/>
+        </svg>
+        <div class="char-glow"></div>
+      </div>
+      <div class="speech-bub" id="dashSpeech">Hi! Tap to tell me how you're feeling 💙</div>
+    </div>
+  </div>
+  <div class="dash-cards">
+    <div class="dash-row">
+      <div class="dc" onclick="goTab('chat')">
+        <div class="dc-ico bl">❤️</div>
+        <div class="dc-lbl">Health Status</div>
+        <div class="dc-val good" id="dStatus">All Systems Normal</div>
+        <div class="dc-sub" id="dStatusSub">No active concerns</div>
+      </div>
+      <div class="dc" onclick="goTab('vitals')">
+        <div class="dc-ico rd">📊</div>
+        <div class="dc-lbl">My Vitals</div>
+        <div class="dc-val" id="dVitals" style="font-size:0.85rem">Tap to log</div>
+        <div class="dc-sub" id="dVitalsSub">Nothing recorded yet</div>
+      </div>
+    </div>
+    <div class="dc full" onclick="goTab('chat')">
+      <div class="dc-ico gr">💬</div>
+      <div style="flex:1">
+        <div class="dc-lbl">Daily Check-in</div>
+        <div class="dc-val" style="font-size:0.88rem">Start your check-in</div>
+        <div class="dc-sub">Tell Healio how you're feeling</div>
+      </div>
+      <button class="dc-btn">Start</button>
+    </div>
+    <div class="dash-row">
+      <div class="dc" onclick="goTab('emergency')">
+        <div class="dc-ico rd">🚨</div>
+        <div class="dc-lbl">First Aid</div>
+        <div class="dc-val" style="font-size:0.83rem">CPR · Choking</div>
+        <div class="dc-sub">8 offline procedures</div>
+      </div>
+      <div class="dc" onclick="goTab('library')">
+        <div class="dc-ico bl">📚</div>
+        <div class="dc-lbl">Library</div>
+        <div class="dc-val" style="font-size:0.83rem">20+ Conditions</div>
+        <div class="dc-sub">Always available offline</div>
+      </div>
+    </div>
+  </div>
+  <div style="height:16px"></div>
+</div>
+</div>
+
+<!-- CHAT -->
+<div class="screen" id="s-chat">
+  <div class="key-ban" id="keyBan">
+    <h3>🔑 Upgrade to AI Mode (optional)</h3>
+    <p style="color:var(--green);font-weight:600">✓ Google Gemini is free — get smarter personalized answers</p>
+
+    <div style="display:flex;gap:6px;margin:2px 0">
+      <button id="tabGemini" onclick="switchKeyTab('gemini')" style="flex:1;padding:7px;border-radius:9px;border:1px solid rgba(0,212,255,0.3);background:rgba(0,212,255,0.12);color:var(--hblue);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer">✓ Gemini (Free)</button>
+      <button id="tabAnthropic" onclick="switchKeyTab('anthropic')" style="flex:1;padding:7px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:0.75rem;font-weight:700;cursor:pointer">Anthropic</button>
+    </div>
+    <div id="geminiInstructions" style="font-size:0.7rem;color:var(--text2);background:var(--bg3);border-radius:9px;padding:8px 10px;line-height:1.6">
+      1. Go to <strong style="color:var(--hblue)">aistudio.google.com</strong><br>
+      2. Sign in with Google<br>
+      3. Click <strong>Get API Key</strong> → <strong>Create API key</strong><br>
+      4. Copy and paste it below
+    </div>
+    <div id="anthropicInstructions" style="display:none;font-size:0.7rem;color:var(--text2);background:var(--bg3);border-radius:9px;padding:8px 10px;line-height:1.6">
+      1. Go to <strong style="color:var(--hblue)">console.anthropic.com</strong><br>
+      2. Sign up — get $5 free credit<br>
+      3. Click <strong>API Keys</strong> → <strong>Create Key</strong><br>
+      4. Copy and paste it below
+    </div>
+    <div class="key-row">
+      <input class="ki" id="ki" type="password" placeholder="Paste your API key here..."/>
+      <button class="ks" onclick="saveKey()">Save</button>
+    </div>
+    <div class="kskip" onclick="dismissKey()">Skip — <span>use offline only</span></div>
+  </div>
+  <div class="chat-top">
+    <svg class="chat-mini-char" width="36" height="36" viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="18" r="17" fill="#111E35" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+      <ellipse cx="18" cy="14" rx="10" ry="9" fill="#D0E8F8"/>
+      <rect x="9" y="19" width="18" height="12" rx="7" fill="#D0E8F8"/>
+      <rect x="10" y="10" width="16" height="8" rx="4" fill="#050D1A"/>
+      <path d="M14 15 Q13 13 12 15" stroke="#00D4FF" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M24 15 Q23 13 22 15" stroke="#00D4FF" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <rect x="14" y="24" width="4" height="1.5" rx="0.75" fill="#FF3B30"/>
+      <rect x="16" y="22" width="1.5" height="4" rx="0.75" fill="#FF3B30"/>
+      <ellipse cx="13" cy="32" rx="4" ry="1.5" fill="#00D4FF" opacity="0.3"/>
+      <ellipse cx="23" cy="32" rx="4" ry="1.5" fill="#00D4FF" opacity="0.3"/>
+    </svg>
+    <div class="chat-speech" id="chatSpeech">Hello! Ask me anything about your health 💙</div>
+  </div>
+  <div class="qrow">
+    <div class="qp" onclick="qs('I have a headache')">🤕 Headache</div>
+    <div class="qp" onclick="qs('I have a fever')">🌡️ Fever</div>
+    <div class="qp" onclick="qs('I feel nauseous')">🤢 Nausea</div>
+    <div class="qp" onclick="qs('I have stomach pain')">😣 Stomach</div>
+    <div class="qp" onclick="qs('I feel exhausted')">😴 Fatigue</div>
+    <div class="qp" onclick="qs('I have cold symptoms')">🤧 Cold/Flu</div>
+    <div class="qp" onclick="qs('I feel very anxious')">😰 Anxiety</div>
+    <div class="qp" onclick="qs('I have a cut that is bleeding')">🩹 Wound</div>
+    <div class="qp" onclick="qs('I have a burn')">🔥 Burn</div>
+    <div class="qp" onclick="qs('I have a UTI')">🚽 UTI</div>
+  </div>
+  <div class="messages" id="msgs">
+    <div class="msg healio">
+      <div class="mav h">✦</div>
+      <div class="mbub">Hi! I'm Healio, your AI health companion 💙
+
+I work 100% offline using a built-in medical knowledge base covering 20+ conditions, first aid procedures, medications, and vital sign references.
+
+Add an API key for smarter AI answers when online, or just start talking — I'm here either way!</div>
+    </div>
+  </div>
+  <div class="ibar">
+    <button class="ib ib-m" id="micBtn" onclick="toggleVoice()">🎤</button>
+    <input class="ci" id="ci" placeholder="How are you feeling?" maxlength="500"/>
+    <button class="ib ib-s" onclick="sendChat()"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg></button>
+  </div>
+</div>
+
+<!-- LIBRARY -->
+<div class="screen" id="s-library">
+<div class="scrollable"><div class="lib-wrap">
+  <input class="lib-search" id="libSearch" placeholder="🔍  Search symptoms or conditions..." oninput="searchLib(this.value)"/>
+  <div id="libContent">
+    <div class="slbl" style="margin-bottom:8px">Browse by Category</div>
+    <div class="cat-grid" id="catGrid"></div>
+  </div>
+</div></div>
+</div>
+
+<!-- FIRST AID -->
+<div class="screen" id="s-emergency">
+<div class="scrollable"><div class="fa-wrap">
+  <div class="emg-ban"><span style="font-size:1.1rem">🚨</span><p>For life-threatening emergencies call <strong>911</strong> first. These guides work fully offline.</p></div>
+  <div class="slbl">Emergency Procedures</div>
+  <div id="procList" style="display:flex;flex-direction:column;gap:7px"></div>
+  <div id="procDetail" style="display:none"></div>
+</div></div>
+</div>
+
+<!-- VITALS -->
+<div class="screen" id="s-vitals">
+<div class="scrollable"><div class="vit-wrap">
+  <div class="vit-ban"><h2>My Health Snapshot 📊</h2><p>Log vitals for personalized Healio advice</p></div>
+  <div class="vgrid">
+    <div class="vcard"><div class="vic">❤️</div><div class="vil">Heart Rate</div><div class="viv e" id="vHR">Not logged</div><div class="virow"><input class="vii" id="hrIn" type="number" placeholder="BPM" min="30" max="220"/><button class="vis" onclick="lv('hr')">Save</button></div></div>
+    <div class="vcard"><div class="vic">🌡️</div><div class="vil">Temperature</div><div class="viv e" id="vTemp">Not logged</div><div class="virow"><input class="vii" id="tempIn" type="number" placeholder="°F" step="0.1"/><button class="vis" onclick="lv('temp')">Save</button></div></div>
+    <div class="vcard" style="grid-column:span 2"><div class="vic">😣</div><div class="vil">Pain Level</div><div class="viv e" id="vPain">Not logged</div><div class="pgrid" id="pgrid"></div></div>
+    <div class="vcard"><div class="vic">😴</div><div class="vil">Sleep</div><div class="viv e" id="vSleep">Not logged</div><div class="virow"><input class="vii" id="sleepIn" type="number" placeholder="hrs" step="0.5"/><button class="vis" onclick="lv('sleep')">Save</button></div></div>
+    <div class="vcard"><div class="vic">💧</div><div class="vil">Hydration</div><div class="viv e" id="vWater">Not logged</div><div class="virow"><input class="vii" id="waterIn" type="number" placeholder="cups"/><button class="vis" onclick="lv('water')">Save</button></div></div>
+  </div>
+  <div class="hcard"><div class="slbl" style="margin-bottom:8px">Recent Logs</div><div id="histList"><p style="font-size:0.78rem;color:var(--text3)">No logs yet</p></div></div>
+</div></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="nav">
+  <button class="nt active" id="nt-dash" onclick="goTab('dash')"><span class="ni">🏠</span>Home<div class="nt-ind"></div></button>
+  <button class="nt" id="nt-chat" onclick="goTab('chat')"><span class="ni">💬</span>Chat<div class="nt-ind"></div></button>
+  <button class="nt" id="nt-library" onclick="goTab('library')"><span class="ni">📚</span>Library<div class="nt-ind"></div></button>
+  <button class="nt" id="nt-emergency" onclick="goTab('emergency')"><span class="ni">🚨</span>First Aid<div class="nt-ind"></div></button>
+  <button class="nt" id="nt-vitals" onclick="goTab('vitals')"><span class="ni">📊</span>Vitals<div class="nt-ind"></div></button>
+</div>
+</div>
+
+<div class="inst-ban" id="instBan">
+  <div class="ibi"><h3>Install Healio</h3><p>Add to home screen for instant access</p></div>
+  <button class="ibc" onclick="triggerInstall()">Install</button>
+  <button class="ibx" onclick="document.getElementById('instBan').classList.remove('show')">✕</button>
+</div>
+
+<script>
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+const host = window.location.hostname;
+const IS_DEPLOYED = host && host !== 'localhost' && host !== '127.0.0.1' && !host.startsWith('192.168') && host !== '';
+// Gemini is free — get key at aistudio.google.com (no credit card)
+// Anthropic is optional — get key at console.anthropic.com ($5 free credit)
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const ANTHROPIC_URL = IS_DEPLOYED ? '/api/chat' : 'https://api.anthropic.com/v1/messages';
+let LOCAL_KEY = localStorage.getItem('healio_gemini_key') || localStorage.getItem('healio_key') || '';
+let KEY_TYPE = localStorage.getItem('healio_key_type') || 'gemini'; // 'gemini' or 'anthropic'
+let chatHistory = [], vitals = {}, vitalLogs = [], deferredPrompt = null, isRec = false, recognition = null;
+
+// ── ENGINE ────────────────────────────────────────────────────────────────
+const engine = new HealioOfflineEngine();
+
+// ── MODE ──────────────────────────────────────────────────────────────────
+function updateMode() {
+  const gKey = localStorage.getItem('healio_gemini_key') || '';
+  const aKey = localStorage.getItem('healio_key') || '';
+  LOCAL_KEY = gKey || aKey;
+  const hasKey = !!LOCAL_KEY || IS_DEPLOYED;
+  const online = navigator.onLine && hasKey;
+  const pill = document.getElementById('modePill');
+  const label = document.getElementById('modeLabel');
+  const dot = document.getElementById('mdot');
+  if (online) {
+    const ktype = localStorage.getItem('healio_key_type') || 'gemini';
+    pill.className='mode-pill online';
+    label.textContent = ktype === 'gemini' ? 'Gemini Free' : 'AI Online';
+    dot.classList.remove('pulse');
+  } else {
+    pill.className='mode-pill offline';
+    label.textContent = hasKey ? 'Offline' : 'Ready';
+    dot.classList.remove('pulse');
+  }
+}
+window.addEventListener('online', updateMode);
+window.addEventListener('offline', updateMode);
+updateMode();
+
+// ── GREETING ──────────────────────────────────────────────────────────────
+function setGreeting() {
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greet').textContent = g + ' 👋';
+}
+setGreeting();
+
+// ── EXPRESSIONS ───────────────────────────────────────────────────────────
+function setExpr(expr) {
+  ['happy','concerned','alert','focused'].forEach(e => {
+    const el = document.getElementById('ey-'+e);
+    if (el) el.setAttribute('opacity', e === expr ? '1' : '0');
+  });
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+function goTab(tab) {
+  ['dash','chat','library','emergency','vitals'].forEach(t => {
+    document.getElementById('s-'+t)?.classList.toggle('active', t===tab);
+    document.getElementById('nt-'+t)?.classList.toggle('active', t===tab);
+  });
+  if (tab==='chat' && !LOCAL_KEY && !IS_DEPLOYED && !localStorage.getItem('healio_skip')) {
+    document.getElementById('keyBan').classList.add('show');
+  }
+}
+
+// ── KEY ───────────────────────────────────────────────────────────────────
+function switchKeyTab(type) {
+  KEY_TYPE = type;
+  const isGemini = type === 'gemini';
+  document.getElementById('tabGemini').style.background = isGemini ? 'rgba(0,212,255,0.12)' : 'var(--bg3)';
+  document.getElementById('tabGemini').style.color = isGemini ? 'var(--hblue)' : 'var(--text2)';
+  document.getElementById('tabGemini').style.borderColor = isGemini ? 'rgba(0,212,255,0.3)' : 'var(--border)';
+  document.getElementById('tabAnthropic').style.background = !isGemini ? 'rgba(0,212,255,0.12)' : 'var(--bg3)';
+  document.getElementById('tabAnthropic').style.color = !isGemini ? 'var(--hblue)' : 'var(--text2)';
+  document.getElementById('tabAnthropic').style.borderColor = !isGemini ? 'rgba(0,212,255,0.3)' : 'var(--border)';
+  document.getElementById('geminiInstructions').style.display = isGemini ? 'block' : 'none';
+  document.getElementById('anthropicInstructions').style.display = !isGemini ? 'block' : 'none';
+  document.getElementById('ki').placeholder = isGemini ? 'AIza...' : 'sk-ant-...';
+}
+
+function saveKey() {
+  const key = document.getElementById('ki').value.trim();
+  if (!key) { alert('Please paste your API key first'); return; }
+  const isGemini = KEY_TYPE === 'gemini';
+  if (isGemini && !key.startsWith('AIza')) { alert('Gemini keys start with "AIza". Get yours free at aistudio.google.com'); return; }
+  if (!isGemini && !key.startsWith('sk-')) { alert('Anthropic keys start with "sk-". Get yours at console.anthropic.com'); return; }
+  const storageKey = isGemini ? 'healio_gemini_key' : 'healio_key';
+  localStorage.setItem(storageKey, key);
+  localStorage.setItem('healio_key_type', KEY_TYPE);
+  LOCAL_KEY = key;
+  document.getElementById('keyBan').classList.remove('show');
+  updateMode();
+  const provider = isGemini ? 'Google Gemini (free)' : 'Anthropic Claude';
+  addMsg('healio', 'AI key saved using ' + provider + '! I now give smarter, personalized answers when you have internet. I still work 100% offline too 💙', false);
+}
+function dismissKey() { localStorage.setItem('healio_skip','1'); document.getElementById('keyBan').classList.remove('show'); }
+document.getElementById('ki')?.addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
+
+// ── CHAT ──────────────────────────────────────────────────────────────────
+function updateSpeech(text) {
+  const short = text.replace(/[*#]/g,'').slice(0,95) + (text.length > 95 ? '...' : '');
+  ['dashSpeech','chatSpeech'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.opacity='0'; setTimeout(()=>{ el.textContent=short; el.style.opacity='1'; el.style.transition='opacity 0.3s'; }, 150); }
+  });
+}
+
+function setModeThinking(busy) {
+  const pill = document.getElementById('modePill');
+  const label = document.getElementById('modeLabel');
+  const dot = document.getElementById('mdot');
+  if (busy) { pill.className='mode-pill busy'; label.textContent='Thinking...'; dot.classList.add('pulse'); }
+  else { updateMode(); }
+}
+
+function addMsg(role, text, isOffline=false, isEmerg=false) {
+  const wrap = document.getElementById('msgs');
+  const d = document.createElement('div'); d.className = 'msg ' + role;
+  const av = document.createElement('div'); av.className = 'mav ' + (role==='healio'?'h':'u');
+  av.textContent = role==='healio' ? '✦' : 'ME';
+  const b = document.createElement('div'); b.className = 'mbub';
+  if (isOffline) b.classList.add('off');
+  if (isEmerg) b.classList.add('em');
+  b.textContent = text;
+  d.appendChild(av); d.appendChild(b);
+  wrap.appendChild(d);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function addTyping() {
+  const wrap = document.getElementById('msgs');
+  const d = document.createElement('div'); d.className='msg healio'; d.id='typing';
+  d.innerHTML = '<div class="mav h">✦</div><div class="mbub"><div class="typing"><span></span><span></span><span></span></div></div>';
+  wrap.appendChild(d); wrap.scrollTop = wrap.scrollHeight;
+}
+function rmTyping() { document.getElementById('typing')?.remove(); }
+
+async function respond(userText) {
+  const geminiKey = localStorage.getItem('healio_gemini_key') || '';
+  const anthropicKey = localStorage.getItem('healio_key') || '';
+  LOCAL_KEY = geminiKey || anthropicKey;
+  KEY_TYPE = geminiKey ? 'gemini' : 'anthropic';
+  // Only attempt AI call if we actually have a key OR are on deployed server with server-side key
+  const isConnected = navigator.onLine && ((!!LOCAL_KEY) || IS_DEPLOYED);
+  setModeThinking(true);
+  setExpr('focused');
+  addTyping();
+  document.getElementById('ci').disabled = true;
+
+  if (isConnected) {
+    try {
+      const currentKeyType = localStorage.getItem('healio_key_type') || 'gemini';
+      let reply = null;
+
+      if (currentKeyType === 'gemini') {
+        // ── GEMINI (free) ──
+        // When deployed on Vercel: use proxy (/api/chat) — no CORS, key hidden server-side
+        // When local with key: direct call (works on Chrome desktop, may fail on mobile)
+        const SYSTEM = `You are Healio, a warm caring AI health companion with a friendly robot personality. Be warm, non-judgmental, practical, and concise. For emergencies (chest pain, difficulty breathing, severe bleeding) always say call 911. Keep responses 3-5 sentences. End with one clear actionable step. User vitals logged: ${JSON.stringify(vitals)}`;
+        const geminiBody = {
+          system_instruction: { parts: [{ text: SYSTEM }] },
+          contents: [
+            ...chatHistory.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+            { role: 'user', parts: [{ text: userText }] }
+          ],
+          generationConfig: { maxOutputTokens: 600, temperature: 0.7 }
+        };
+        let res;
+        if (IS_DEPLOYED) {
+          // Through Vercel proxy — fixes all CORS and mobile issues
+          res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: 'gemini', ...geminiBody })
+          });
+        } else {
+          // Direct call — only works on Chrome desktop (not mobile Safari/Chrome)
+          res = await fetch(`${GEMINI_URL}?key=${LOCAL_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(geminiBody)
+          });
+        }
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error('Gemini ' + res.status + ': ' + (errData.error?.message || 'API error'));
+        }
+        const data = await res.json();
+        reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      } else {
+        // ── ANTHROPIC (optional) ──
+        const headers = { 'Content-Type': 'application/json' };
+        if (!IS_DEPLOYED) { headers['x-api-key'] = LOCAL_KEY; headers['anthropic-version'] = '2023-06-01'; }
+        const SYSTEM = `You are Healio, a warm caring AI health companion with a friendly robot character. Be warm, non-judgmental, practical. For emergencies always say call 911. Keep responses 3-5 sentences. End with one clear action. User vitals: ${JSON.stringify(vitals)}`;
+        chatHistory.push({ role:'user', content: userText });
+        const res = await fetch(ANTHROPIC_URL, { method:'POST', headers, body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:800, system:SYSTEM, messages:chatHistory }) });
+        if (!res.ok) throw new Error('Anthropic ' + res.status);
+        const data = await res.json();
+        reply = data.content?.[0]?.text;
+      }
+
+      if (!reply) throw new Error('no reply');
+      chatHistory.push({ role:'user', content: userText });
+      chatHistory.push({ role:'assistant', content: reply });
+      if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20); // keep last 10 turns
+      rmTyping();
+      addMsg('healio', reply, false);
+      updateSpeech(reply);
+      setExpr('happy');
+      setModeThinking(false);
+      document.getElementById('ci').disabled = false;
+      return;
+    } catch(e) {
+      /* silently fall through to offline KB */
+    }
+  }
+
+  // Offline KB response
+  await new Promise(r => setTimeout(r, 380));
+  rmTyping();
+  const result = engine.respond(userText);
+  const isEmerg = result.type === 'emergency';
+  let text = result.text;
+  if (result.type === 'firstaid') text = engine.formatFirstAid(result.data);
+  addMsg('healio', text, !isConnected, isEmerg);
+  updateSpeech(text);
+  setExpr(isEmerg ? 'alert' : result.type === 'condition' ? 'concerned' : 'happy');
+  setModeThinking(false);
+  document.getElementById('ci').disabled = false;
+  if (result.type === 'condition' || result.type === 'emergency') {
+    document.getElementById('dStatus').textContent = isEmerg ? 'Emergency Detected' : 'Concern Noted';
+    document.getElementById('dStatus').className = 'dc-val ' + (isEmerg ? 'alert' : 'warn');
+    document.getElementById('dStatusSub').textContent = result.data?.name || 'See chat for details';
+  }
+}
+
+function sendChat() {
+  const el = document.getElementById('ci'); const t = el.value.trim();
+  if (!t) return; el.value = '';
+  addMsg('user', t); respond(t);
+}
+function qs(t) { goTab('chat'); addMsg('user', t); respond(t); }
+document.getElementById('ci').addEventListener('keydown', e => { if(e.key==='Enter') sendChat(); });
+
+// ── VOICE ─────────────────────────────────────────────────────────────────
+function toggleVoice() {
+  const btn = document.getElementById('micBtn');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { addMsg('healio','Voice input needs Chrome on Android 💙'); return; }
+  if (isRec) { recognition?.stop(); return; }
+  recognition = new SR(); recognition.lang='en-US'; recognition.interimResults=true;
+  recognition.onstart = () => { isRec=true; btn.classList.add('rec'); btn.textContent='⏹️'; document.getElementById('ci').placeholder='🎤 Listening...'; };
+  recognition.onresult = e => { document.getElementById('ci').value = Array.from(e.results).map(r=>r[0].transcript).join(''); };
+  recognition.onend = () => {
+    isRec=false; btn.classList.remove('rec'); btn.textContent='🎤'; document.getElementById('ci').placeholder='How are you feeling?';
+    const v = document.getElementById('ci').value.trim();
+    if (v) { document.getElementById('ci').value=''; addMsg('user',v); respond(v); }
+  };
+  recognition.onerror = () => { isRec=false; btn.classList.remove('rec'); btn.textContent='🎤'; };
+  recognition.start();
+}
+
+// ── LIBRARY ───────────────────────────────────────────────────────────────
+const categories = {
+  respiratory:{icon:'🫁',name:'Respiratory',conditions:['common_cold','flu']},
+  pain:{icon:'🤕',name:'Pain',conditions:['headache_tension','migraine','back_pain']},
+  gastro:{icon:'🤢',name:'Digestive',conditions:['gastroenteritis','acid_reflux','constipation']},
+  general:{icon:'🌡️',name:'General',conditions:['fever']},
+  injury:{icon:'🩹',name:'Injuries',conditions:['cut_wound','burn','sprain','sunburn']},
+  immune:{icon:'🛡️',name:'Immune',conditions:['allergic_reaction']},
+  mental:{icon:'🧠',name:'Mental Health',conditions:['anxiety']},
+  cardio:{icon:'❤️',name:'Cardiovascular',conditions:['hypertension']},
+  metabolic:{icon:'🩸',name:'Metabolic',conditions:['low_blood_sugar']},
+  urinary:{icon:'🚽',name:'Urinary',conditions:['uti']},
+  eye:{icon:'👁️',name:'Eye',conditions:['conjunctivitis']}
+};
+
+function buildLibrary() {
+  const grid = document.getElementById('catGrid');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(categories).map(([k,cat]) =>
+    `<div class="cat-card" onclick="showCat('${k}')"><div style="font-size:1.3rem">${cat.icon}</div><div><div style="font-size:0.82rem;font-weight:600;color:var(--text)">${cat.name}</div><div style="font-size:0.67rem;color:var(--text3);margin-top:1px">${cat.conditions.length} condition${cat.conditions.length>1?'s':''}</div></div></div>`
+  ).join('');
+}
+
+function showCat(catKey) {
+  const cat = categories[catKey];
+  document.getElementById('libContent').innerHTML = `
+    <div class="back-btn" onclick="resetLib()">← Back</div>
+    <div class="slbl" style="margin-bottom:8px">${cat.icon} ${cat.name}</div>
+    <div class="cond-list">${cat.conditions.map(key => {
+      const c = engine.kb.conditions[key]; if (!c) return '';
+      const sc = c.severity?.includes('severe') ? 'sv-s' : c.severity?.includes('moderate') ? 'sv-mo' : 'sv-m';
+      return `<div class="cond-card" onclick="showCond('${key}')"><div style="font-size:1.25rem">${c.emoji||'⚕️'}</div><div style="flex:1"><div style="font-size:0.84rem;font-weight:600;color:var(--text)">${c.name}</div><span class="sev-tag ${sc}">${c.severity||'mild'}</span></div><span style="color:var(--text3)">›</span></div>`;
+    }).join('')}</div>`;
+}
+
+function showCond(key) {
+  const c = engine.kb.conditions[key]; if (!c) return;
+  let html = `<div class="back-btn" onclick="resetLib()" style="margin-bottom:10px">← Back to Library</div>
+  <div class="cond-detail">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.9rem">${c.emoji||'⚕️'}</span><div class="cd-title">${c.name}</div></div>
+    ${c.causes ? `<div><div class="cd-st">What causes it</div><p class="cd-t">${c.causes}</p></div>` : ''}
+    ${c.duration ? `<div><div class="cd-st">Duration</div><p class="cd-t">${c.duration}</p></div>` : ''}
+    ${(c.advice||c.firstAid) ? `<div><div class="cd-st">What to do</div>${(c.advice||c.firstAid).map(a=>`<div class="cd-it">${a}</div>`).join('')}</div>` : ''}
+    ${c.seeDoctor?.length ? `<div class="warn-box"><div class="warn-t">🏥 See a doctor if</div>${c.seeDoctor.map(s=>`<div class="cd-it" style="color:var(--text2)">${s}</div>`).join('')}</div>` : ''}
+    ${c.childrenNote ? `<div class="warn-box"><div class="warn-t">👶 For children</div><p class="cd-t">${c.childrenNote}</p></div>` : ''}
+    <button class="chat-cta" onclick="qs('Tell me more about ${c.name}')">💬 Ask Healio about ${c.name}</button>
+  </div>`;
+  document.getElementById('libContent').innerHTML = html;
+}
+
+function resetLib() {
+  document.getElementById('libContent').innerHTML = '<div class="slbl" style="margin-bottom:8px">Browse by Category</div><div class="cat-grid" id="catGrid"></div>';
+  buildLibrary();
+}
+
+function searchLib(q) {
+  const query = q.toLowerCase().trim();
+  if (!query) { resetLib(); return; }
+  const results = Object.entries(engine.kb.conditions).filter(([k,c]) =>
+    c.name.toLowerCase().includes(query) ||
+    (Array.isArray(c.symptoms) && c.symptoms.some(s => s.includes(query))) ||
+    (c.causes && c.causes.toLowerCase().includes(query))
+  );
+  document.getElementById('libContent').innerHTML = `
+    <div class="slbl" style="margin-bottom:8px">Results for "${q}"</div>
+    ${results.length ? `<div class="cond-list">${results.map(([key,c]) => {
+      const sc = c.severity?.includes('severe') ? 'sv-s' : c.severity?.includes('moderate') ? 'sv-mo' : 'sv-m';
+      return `<div class="cond-card" onclick="showCond('${key}')"><div style="font-size:1.25rem">${c.emoji||'⚕️'}</div><div style="flex:1"><div style="font-size:0.84rem;font-weight:600;color:var(--text)">${c.name}</div><span class="sev-tag ${sc}">${c.severity||'mild'}</span></div><span style="color:var(--text3)">›</span></div>`;
+    }).join('')}</div>` : '<p style="font-size:0.81rem;color:var(--text3);padding:10px 0">No conditions found.</p>'}`;
+}
+
+// ── FIRST AID ─────────────────────────────────────────────────────────────
+const procs = [
+  {key:'cpr_adult',    emoji:'🫀', name:'CPR — Adult',          desc:'Unresponsive adult not breathing',    danger:true},
+  {key:'cpr_child',    emoji:'👦', name:'CPR — Child',           desc:'Unresponsive child (1–12 yrs)',       danger:true},
+  {key:'cpr_infant',   emoji:'👶', name:'CPR — Infant',          desc:'Unresponsive baby under 1 year',     danger:true},
+  {key:'choking_adult',emoji:'🫁', name:'Choking — Adult/Child', desc:'Cannot cough, speak, or breathe',    danger:true},
+  {key:'choking_infant',emoji:'👶',name:'Choking — Infant',      desc:'Baby under 1 year choking',          danger:true},
+  {key:'severe_bleeding',emoji:'🩸',name:'Severe Bleeding',      desc:'Wound not stopping after pressure',  danger:true},
+  {key:'anaphylaxis_response',emoji:'💉',name:'Anaphylaxis',     desc:'Severe allergic reaction',           danger:true},
+  {key:'recovery_position',emoji:'🛌',name:'Recovery Position',  desc:'Unconscious but breathing',          danger:false}
+];
+
+function buildProcs() {
+  document.getElementById('procList').innerHTML = procs.map(p =>
+    `<div class="proc-card ${p.danger?'d':''}" onclick="showProc('${p.key}')"><div style="font-size:1.35rem">${p.emoji}</div><div style="flex:1"><div class="pn">${p.name}</div><div class="pd">${p.desc}</div></div><span style="color:var(--text3)">›</span></div>`
+  ).join('');
+}
+
+function showProc(key) {
+  const proc = engine.kb.firstAid[key]; if (!proc) return;
+  document.getElementById('procList').style.display = 'none';
+  document.getElementById('procDetail').style.display = 'block';
+  document.getElementById('procDetail').innerHTML = `
+    <div class="back-btn" onclick="document.getElementById('procList').style.display='flex';document.getElementById('procList').style.flexDirection='column';document.getElementById('procDetail').style.display='none'" style="margin-bottom:10px">← Back</div>
+    <div class="proc-detail">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="font-size:1.7rem">${proc.emoji}</span><div style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-weight:800;font-size:0.97rem;font-weight:700;color:var(--text)">${proc.name}</div></div>
+      ${proc.when ? `<p style="font-size:0.76rem;color:var(--amber);font-weight:500;padding:7px 11px;background:rgba(255,159,10,0.08);border-radius:9px;border:1px solid rgba(255,159,10,0.2);margin-bottom:4px">${proc.when}</p>` : ''}
+      ${proc.steps.map((s,i) => `<div class="ps"><div class="psn">${i+1}</div><div class="pst">${s}</div></div>`).join('')}
+      ${proc.selfChoking ? `<div style="margin-top:5px"><div class="slbl" style="margin-bottom:5px">If alone and choking</div>${proc.selfChoking.map(s=>`<div class="cd-it" style="font-size:0.8rem;color:var(--text2);line-height:1.5;padding-left:13px;position:relative;margin-bottom:3px">${s}</div>`).join('')}</div>` : ''}
+      ${proc.note ? `<p style="font-size:0.76rem;color:var(--hblue);background:var(--hblue-dim);padding:9px 11px;border-radius:9px;border:1px solid rgba(0,212,255,0.15);margin-top:4px">${proc.note}</p>` : ''}
+    </div>`;
+}
+
+// ── VITALS ────────────────────────────────────────────────────────────────
+const pg = document.getElementById('pgrid');
+for (let i=1; i<=10; i++) {
+  const b = document.createElement('div'); b.className='pn2'; b.textContent=i; b.dataset.v=i;
+  b.onclick = function() {
+    document.querySelectorAll('.pn2').forEach(p=>p.classList.remove('sel'));
+    this.classList.add('sel'); vitals.pain=this.dataset.v;
+    const el=document.getElementById('vPain'); el.textContent=this.dataset.v+'/10'; el.classList.remove('e');
+    al('Pain Level', this.dataset.v+'/10', '#FF3B30');
+  };
+  pg.appendChild(b);
+}
+
+const vm = {
+  hr:    {el:'vHR',    inp:'hrIn',    unit:'BPM',  label:'Heart Rate',  color:'#FF3B30'},
+  temp:  {el:'vTemp',  inp:'tempIn',  unit:'°F',   label:'Temperature', color:'#FF9F0A'},
+  sleep: {el:'vSleep', inp:'sleepIn', unit:'hrs',  label:'Sleep',       color:'#006FFF'},
+  water: {el:'vWater', inp:'waterIn', unit:'cups', label:'Hydration',   color:'#00D4FF'}
+};
+
+function lv(key) {
+  const m = vm[key]; const val = document.getElementById(m.inp).value.trim();
+  if (!val) return; vitals[key]=val;
+  const el=document.getElementById(m.el); el.textContent=val+' '+m.unit; el.classList.remove('e');
+  document.getElementById(m.inp).value='';
+  al(m.label, val+' '+m.unit, m.color);
+  document.getElementById('dVitals').textContent = val+' '+m.unit;
+  document.getElementById('dVitalsSub').textContent = m.label+' logged';
+}
+
+function al(label, value, color) {
+  const now = new Date();
+  vitalLogs.unshift({label, value, color, time: now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  if (vitalLogs.length > 12) vitalLogs.pop();
+  const el = document.getElementById('histList');
+  el.innerHTML = vitalLogs.map(l =>
+    `<div class="hlog"><div class="hdot" style="background:${l.color}"></div><div class="htext">${l.label}: <strong>${l.value}</strong></div><div class="htime">${l.time}</div></div>`
+  ).join('');
+}
+
+// ── PWA ───────────────────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt=e;
+  document.getElementById('instBan').classList.add('show');
+});
+function triggerInstall() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => { deferredPrompt=null; document.getElementById('instBan').classList.remove('show'); });
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+buildLibrary();
+buildProcs();
+document.getElementById('procList').style.flexDirection = 'column';
+setExpr('happy');
+</script>
+</body>
+</html>
